@@ -19,8 +19,12 @@ def generateMask(image):
     low = np.array([0, int(255*.6), 0])
     high = np.array([64, 255, 255])
     mask = cv2.inRange(image, low, high)
-    low = np.array([130, int(255*.6), 0])
+    low = np.array([160, int(255*.6), 0])
     high = np.array([255, 255, 255])
+    mask = cv2.bitwise_or(mask, cv2.inRange(image, low, high))
+
+    low = np.array([0, int(255 * .4), int(255 * .05)])
+    high = np.array([255, int(255 * .9), int(255 * .15)])
     mask = cv2.bitwise_or(mask, cv2.inRange(image, low, high))
 
     # # Mid bright
