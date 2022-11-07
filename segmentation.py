@@ -6,7 +6,6 @@ import numpy as np
 from remove_frame.houghLines import removeFrameUsingHoughLines
 
 
-
 def generateMask(image):
 
     sensitivity = 80
@@ -61,7 +60,7 @@ def createFolders(outputFolders=["result"]):
 
 
 def processImage(imagePath):
-    image = removeFrameUsingHoughLines(f"{path}/{file}")
+    image = removeFrameUsingHoughLines(imagePath)
     B, G, R = cv2.split(image)
     B = cv2.equalizeHist(B)
     G = cv2.equalizeHist(G)
@@ -109,7 +108,7 @@ if __name__ == "__main__":
     if (os.path.isdir(path)):
         for file in os.listdir(path):
             if (file.lower().endswith(".jpg")):
-                processImage(file)
+                processImage(f"{path}/{file}")
 
         sys.exit(0)
 
