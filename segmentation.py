@@ -2,7 +2,8 @@ import sys
 import os
 import cv2
 import numpy as np
-from removeFrame import removeFrame
+
+from remove_frame.houghLines import removeFrameUsingHoughLines
 
 
 def generateMask(image):
@@ -59,7 +60,7 @@ def createFolders(outputFolders=["result"]):
 
 
 def processImage(imagePath):
-    image = removeFrame(f"{path}/{file}")
+    image = removeFrameUsingHoughLines(imagePath)
     B, G, R = cv2.split(image)
     B = cv2.equalizeHist(B)
     G = cv2.equalizeHist(G)
@@ -69,7 +70,13 @@ def processImage(imagePath):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     mask = generateMask(image)
-    parentFolder = outputFolder + "/" + file.split(".")[0]
+    
+    # Check the operating system and create folder for results depedning on that
+    if sys.platform == "win32":
+        parentFolder = os.path.dirname(imagePath) + "\\" + outputFolder
+    else:
+        parentFolder = outputFolder + "/" + imagePath.split(".")[0]
+    print(parentFolder)
     createFolders([parentFolder])
     # Save image
     saveImage(
@@ -107,7 +114,7 @@ if __name__ == "__main__":
     if (os.path.isdir(path)):
         for file in os.listdir(path):
             if (file.lower().endswith(".jpg")):
-                processImage(file)
+                processImage(f"{path}/{file}")
 
         sys.exit(0)
 
