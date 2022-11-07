@@ -2,7 +2,9 @@ import sys
 import os
 import cv2
 import numpy as np
-from removeFrame import removeFrame
+
+from remove_frame.houghLines import removeFrameUsingHoughLines
+
 
 
 def generateMask(image):
@@ -59,7 +61,7 @@ def createFolders(outputFolders=["result"]):
 
 
 def processImage(imagePath):
-    image = removeFrame(f"{path}/{file}")
+    image = removeFrameUsingHoughLines(f"{path}/{file}")
     B, G, R = cv2.split(image)
     B = cv2.equalizeHist(B)
     G = cv2.equalizeHist(G)
