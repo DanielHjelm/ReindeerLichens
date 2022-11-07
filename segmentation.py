@@ -70,7 +70,13 @@ def processImage(imagePath):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     mask = generateMask(image)
-    parentFolder = outputFolder + "/" + file.split(".")[0]
+    
+    # Check the operating system and create folder for results depedning on that
+    if sys.platform == "win32":
+        parentFolder = os.path.dirname(imagePath) + "\\" + outputFolder
+    else:
+        parentFolder = outputFolder + "/" + imagePath.split(".")[0]
+    print(parentFolder)
     createFolders([parentFolder])
     # Save image
     saveImage(
