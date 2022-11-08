@@ -75,8 +75,8 @@ def removeFrameUsingHoughLines(image_path, dilation_kernel = 20):
         # Area within frame
         output = np.zeros((w,h))
         output = img[y:y+h, x:x+w]
-        print(f'Ratio between sides: {np.shape(output)[0]/np.shape(output)[1]}')
-        print(f'Ratio area: {(np.shape(output)[0]*np.shape(output)[1])/(np.shape(img)[0]*np.shape(img)[1])}')
+        # print(f'Ratio between sides: {np.shape(output)[0]/np.shape(output)[1]}')
+        # print(f'Ratio area: {(np.shape(output)[0]*np.shape(output)[1])/(np.shape(img)[0]*np.shape(img)[1])}')
 
         # If returned image is somewhat sqaure, return results
         if (0.9 <= np.shape(output)[0]/np.shape(output)[1] <= 1.1) and (0.2 < (np.shape(output)[0]*np.shape(output)[1])/(np.shape(img)[0]*np.shape(img)[1]) < 0.65):
