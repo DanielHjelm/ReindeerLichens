@@ -33,6 +33,12 @@ https://www.kaggle.com/code/lewisgmorris/image-segmentation-using-detectron2
 >
 > Updated version code: https://github.com/facebookresearch/detectron2/blob/main/INSTALL.md
 
+### Deep learning for segmentation on wheat, with very different backgrounds and conditions
+"Outdoor Plant Segmentation With Deep Learning for High-Throughput Field Phenotyping on a Diverse Wheat Dataset"
+Article: https://www.frontiersin.org/articles/10.3389/fpls.2021.774068/full
+Code: https://github.com/RadekZenkl/EWS
+
+
 ### Fool for useful to label images
 
 https://github.com/wkentaro/labelme
