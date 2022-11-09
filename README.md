@@ -14,7 +14,7 @@ Use "Shading correction based on Gaussian smoothing" - create a "background" usi
 ### Use template matching for identification
 Use template matching (OpenCV) to find typical lichen or typical errors. Could give good results for removing bägarlav 
 
-### Deep Leraning
+### Deep Learning
 
 https://www.v7labs.com/blog/image-segmentation-guide
 
