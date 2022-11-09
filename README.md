@@ -37,6 +37,13 @@ Article: https://www.frontiersin.org/articles/10.3389/fpls.2021.774068/full
 Code: https://github.com/RadekZenkl/EWS
 
 
-#### Fool for useful to label images
+#### Tool for useful to label images
 
 https://github.com/wkentaro/labelme
+
+
+
+# Fix corrupted zip file by using 
+```zip -FF FILE.zip --out fixed.zip```
+ followed by ```7z x fixed.zip ```
+> Worked on linux
