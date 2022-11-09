@@ -38,7 +38,10 @@ Code: https://github.com/RadekZenkl/EWS
 
 
 #### Tool for useful to label images
+##### Lightly
+https://www.lightly.ai/: Self-supervised learning. Built to help you understand and work with large unlabeled datasets.
 
+##### Labelme
 https://github.com/wkentaro/labelme
 
 
