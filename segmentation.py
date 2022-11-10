@@ -1,9 +1,8 @@
-import sys
 import os
 import cv2
 import numpy as np
-
-from remove_frame.houghLines import removeFrameUsingHoughLines
+from remove_frame.removeFrame import removeFrame
+import sys
 
 
 def generateMask(image):
@@ -27,6 +26,7 @@ def generateMask(image):
     low = np.array([0, int(255 * .4), int(255 * .05)])
     high = np.array([255, int(255 * .9), int(255 * .15)])
     mask = cv2.bitwise_or(mask, cv2.inRange(image, low, high))
+
 
     # # Mid bright
     # low = np.array([30, int(255*.5), int(255*.05)])
@@ -56,11 +56,14 @@ def saveImage(image, path):
 def createFolders(outputFolders=["result"]):
     for folder in outputFolders:
         if not os.path.exists(folder):
-            os.mkdir(folder)
+            os.makedirs(folder)
 
 
 def processImage(imagePath):
-    image = removeFrameUsingHoughLines(imagePath)
+    print(imagePath)
+    image = removeFrame(imagePath)
+    if (image is None):
+        return None
     B, G, R = cv2.split(image)
     B = cv2.equalizeHist(B)
     G = cv2.equalizeHist(G)
@@ -70,13 +73,14 @@ def processImage(imagePath):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     mask = generateMask(image)
-    
+
+    imagePath = imagePath.split("/")[1]
     # Check the operating system and create folder for results depedning on that
     if sys.platform == "win32":
         parentFolder = os.path.dirname(imagePath) + "\\" + outputFolder
     else:
         parentFolder = outputFolder + "/" + imagePath.split(".")[0]
-    print(parentFolder)
+    # print(parentFolder)
     createFolders([parentFolder])
     # Save image
     saveImage(
@@ -99,16 +103,19 @@ if __name__ == "__main__":
     if (len(sys.argv) < 2):
         print(
             "Usage: python segmentation.py pathToFolderOrFile OPTIONAL: pathToOutputFolder")
-        sys.exit(1)
+        print("Using default images path and result output folder")
+        path = "Images"
+    else:
+        path = sys.argv[1]
 
     outputFolder = "result"
 
     if (len(sys.argv) == 3):
         outputFolder = f"{os.getcwd()}/{sys.argv[2]}"
 
-    path = sys.argv[1]
-
     purple = [148, 0, 211]
+    print(outputFolder)
+
     createFolders([outputFolder])
 
     if (os.path.isdir(path)):
@@ -118,6 +125,10 @@ if __name__ == "__main__":
 
         sys.exit(0)
 
-    else:
+    elif os.path.isfile(path):
         processImage(path)
         sys.exit(0)
+
+    else:
+        print("Folder or file not found")
+        exit(1)
