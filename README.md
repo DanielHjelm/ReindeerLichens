@@ -9,10 +9,14 @@ Use OpenCV for removing boarders
 ### Pre processing - shades
 Use "Shading correction based on Gaussian smoothing" - create a "background" using a large mean filter and subtract/divide by this to remove shades
 
-## Generate masks/labling
+## Generate mask/labeling
 
 ### GrabCut
 https://docs.opencv.org/3.4/d8/d83/tutorial_py_grabcut.html (used in https://arxiv.org/pdf/2203.00787.pdf)
+
+### A Freeware Multispectral Image Data Analysis System
+https://engineering.purdue.edu/~biehl/MultiSpec/index.html
+
 
 ### Labelme
 https://github.com/wkentaro/labelme
@@ -34,7 +38,6 @@ https://iopscience.iop.org/article/10.1088/1748-9326/ab6d38/pdf
 
 https://www.iges.or.jp/en/publication_documents/pub/peer/en/11571/Remote+Sensing+-+Jozdani+et+al+2021.pdf
 
-A Freeware Multispectral Image Data Analysis System: https://engineering.purdue.edu/~biehl/MultiSpec/index.html
 
 https://arxiv.org/pdf/2203.00787.pdf
 
