@@ -14,9 +14,17 @@ Use "Shading correction based on Gaussian smoothing" - create a "background" usi
 ### Use template matching for identification
 Use template matching (OpenCV) to find typical lichen or typical errors. Could give good results for removing bägarlav 
 
-### Deep Learning
+### Machine Learning
 
 https://www.v7labs.com/blog/image-segmentation-guide
+
+#### Machine learning for lichen mapping
+
+https://iopscience.iop.org/article/10.1088/1748-9326/ab6d38/pdf
+
+https://www.iges.or.jp/en/publication_documents/pub/peer/en/11571/Remote+Sensing+-+Jozdani+et+al+2021.pdf
+
+A Freeware Multispectral Image Data Analysis System: https://engineering.purdue.edu/~biehl/MultiSpec/index.html
 
 #### Deeplab image segmentation paper
 
@@ -39,7 +47,7 @@ Code: https://github.com/RadekZenkl/EWS
 #### Deep learning for data with limited labeling
 https://arxiv.org/abs/2005.10266
 
-https://www.iges.or.jp/en/publication_documents/pub/peer/en/11571/Remote+Sensing+-+Jozdani+et+al+2021.pdf
+
 
 
 #### Tool for useful to label images
