@@ -49,9 +49,9 @@ https://www.lightly.ai/: Self-supervised learning. Built to help you understand 
 ##### Labelme
 https://github.com/wkentaro/labelme
 
-# Other approaches for estimating lichen coverage
+## Other approaches for estimating lichen coverage
 
-## Advanced Photogrammetry
+### Advanced Photogrammetry
 https://www.researchgate.net/publication/320670417_Advanced_Photogrammetry_to_Assess_Lichen_Colonization_in_the_Hyper-Arid_Namib_Desert
 
 # Fix corrupted zip file by using 
