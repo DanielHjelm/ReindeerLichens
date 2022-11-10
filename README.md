@@ -42,8 +42,6 @@ https://arxiv.org/abs/2005.10266
 https://www.iges.or.jp/en/publication_documents/pub/peer/en/11571/Remote+Sensing+-+Jozdani+et+al+2021.pdf
 
 
-
-
 #### Tool for useful to label images
 ##### Lightly
 https://www.lightly.ai/: Self-supervised learning. Built to help you understand and work with large unlabeled datasets.
@@ -51,7 +49,10 @@ https://www.lightly.ai/: Self-supervised learning. Built to help you understand 
 ##### Labelme
 https://github.com/wkentaro/labelme
 
+# Other approaches for estimating lichen coverage
 
+## Advanced Photogrammetry
+https://www.researchgate.net/publication/320670417_Advanced_Photogrammetry_to_Assess_Lichen_Colonization_in_the_Hyper-Arid_Namib_Desert
 
 # Fix corrupted zip file by using 
 ```zip -FF FILE.zip --out fixed.zip```
