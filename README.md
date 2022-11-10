@@ -36,6 +36,13 @@ https://www.kaggle.com/code/lewisgmorris/image-segmentation-using-detectron2
 Article: https://www.frontiersin.org/articles/10.3389/fpls.2021.774068/full
 Code: https://github.com/RadekZenkl/EWS
 
+#### Deep learning for data with limited labeling
+https://arxiv.org/abs/2005.10266
+
+https://www.iges.or.jp/en/publication_documents/pub/peer/en/11571/Remote+Sensing+-+Jozdani+et+al+2021.pdf
+
+
+
 
 #### Tool for useful to label images
 ##### Lightly
