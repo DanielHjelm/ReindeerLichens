@@ -106,7 +106,10 @@ func createArrayInt(sizeX, sizeY int) [][]int {
 	return a
 }
 
-func assignBasedOnLocalMeanNorm(image image.Image, labels [][]int, x, y int) int {
+func assignBasedOnLocalMeanNorm(image image.Image, labels, labels_next [][]int, x, y int) int {
+	if labels[x][y] != 0 {
+		return 0
+	}
 	done := false
 	found := 0
 	values := []float64{}
@@ -152,10 +155,22 @@ func assignBasedOnLocalMeanNorm(image image.Image, labels [][]int, x, y int) int
 	// This pixel rgb
 	r, g, b, _ := image.At(x, y).RGBA()
 	r, g, b = r/257, g/257, b/257
-	if norm := l2(r, g, b); (math.Abs(norm-mean))/mean < threshold {
-		labels[x][y] = 1
-		return 1
+
+	if norm := l2(r, g, b); norm > mean {
+		if (norm-mean)/mean <= threshold {
+			labels_next[x][y] = 1
+			return 1
+		}
+	} else {
+		if (mean-norm)/mean <= threshold*1.5 {
+			labels_next[x][y] = 1
+			return 1
+		}
 	}
+	// if norm := l2(r, g, b); (math.Abs(norm-mean))/mean < threshold {
+	// 	labels_next[x][y] = 1
+	// 	return 1
+	// }
 	return 0
 }
 
@@ -173,12 +188,12 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 	}
 
 	// c_max := getImageMaxNorm(img)
-	labels_i := copyArrayInt(labels)
+	labels_next := copyArrayInt(labels)
 	strength_i := copyArrayFloat(strength)
 
 	found := true
 	count := 0
-	skipEvenX := false
+	skipEvenX := true
 
 	for found {
 		found = false
@@ -199,7 +214,7 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 				defer wg.Done()
 				for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y += 1 {
 
-					assigned += assignBasedOnLocalMeanNorm(img, labels_i, x, y)
+					assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, x, y)
 
 					// r, g, b, _ := img.At(x, y).RGBA()
 					// r, g, b = r/257, g/257, b/257
@@ -257,7 +272,7 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 		fmt.Printf("Iteration: %d\n", count)
 
 		if (count % 10) == 0 {
-			mask := copyArrayInt(labels_i)
+			mask := copyArrayInt(labels_next)
 
 			for i := 0; i < len(initial_values); i++ {
 				x := initial_values[i]["x"]
@@ -277,7 +292,7 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 		}
 
 		skipEvenX = !skipEvenX
-		labels = copyArrayInt(labels_i)
+		labels = copyArrayInt(labels_next)
 		strength = copyArrayFloat(strength_i)
 
 	}
@@ -285,6 +300,20 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 	// make labels into an image
 
 	log.Printf("Done")
+
+	for i := 0; i < len(initial_values); i++ {
+		x := initial_values[i]["x"]
+		y := initial_values[i]["y"]
+		labels[x][y] = -1
+
+	}
+
+	// err := saveImage("grow_cut.jpg", arrayToImage(_saveImg))
+	err := saveMaskOnTopOfImage(img, labels, "grow_cut.jpg")
+	if err != nil {
+		panic(err)
+
+	}
 
 }
 
