@@ -16,11 +16,11 @@ def removeFrameUsingHoughLines(image_path, dilation_kernel = 20):
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
 
     # Median filter the gray image
-    blur_gray = cv2.medianBlur(gray, 1)
+    median = cv2.medianBlur(gray, 1)
 
     # Sharpen image
     sharpen_kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-    sharpen = cv2.filter2D(blur_gray, -1, sharpen_kernel)
+    sharpen = cv2.filter2D(median, -1, sharpen_kernel)
 
     # Threshold image
     thresh = cv2.threshold(sharpen, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]

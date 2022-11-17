@@ -1,5 +1,8 @@
 import cv2
 import numpy as np
+import sys
+sys.path.append("removeBlueFrame.py")
+sys.path.append("removeFoldingRule.py")
 from removeBlueFrame import removeBlueFrame
 from removeFoldingRule import removeFoldingRule
 
