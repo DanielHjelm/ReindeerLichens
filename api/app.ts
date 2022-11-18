@@ -4,19 +4,11 @@ import router from "./routes/images";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
-import mongodb from "mongodb";
-
-// Connect to MongoDB
-mongoose.connect(
-  "mongodb+srv://admin:" +
-    "hejhej" +
-    "@reindeerlichens.ro1gjeu.mongodb.net/?retryWrites=true&w=majority"
-);
 
 // Create app
 const app = express();
 
-// Morgon
+// Morgan
 app.use(morgan("dev"));
 
 // Body Parser
@@ -38,6 +30,7 @@ app.use((req, res, next) => {
   next();
 });
 
+
 // Route
 app.use("/images", router);
 
@@ -46,6 +39,7 @@ app.use((req, res, next) => {
   next(error);
 });
 
+// Error handling
 app.use(
   (
     error: Error,
@@ -61,7 +55,7 @@ app.use(
 
 export default app;
 
-// Class extening Error class for Typescript
+// Class extending Error class for Typescript
 export class CustomError extends Error {
   status = 400;
 
@@ -79,17 +73,4 @@ export class CustomError extends Error {
   }
 }
 
-interface ConnectOptions extends mongodb.MongoClientOptions {
-  /** Set to false to [disable buffering](http://mongoosejs.com/docs/faq.html#callback_never_executes) on all models associated with this connection. */
-  bufferCommands?: boolean;
-  /** The name of the database you want to use. If not provided, Mongoose uses the database name from connection string. */
-  dbName?: string;
-  /** username for authentication, equivalent to `options.auth.user`. Maintained for backwards compatibility. */
-  user?: string;
-  /** password for authentication, equivalent to `options.auth.password`. Maintained for backwards compatibility. */
-  pass?: string;
-  /** Set to false to disable automatic index creation for all models associated with this connection. */
-  autoIndex?: boolean;
-  /** Set to `true` to make Mongoose automatically call `createCollection()` on every model created on this connection. */
-  autoCreate?: boolean;
-}
+

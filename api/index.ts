@@ -1,22 +1,25 @@
 import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import app from './app';
-import http from 'http'
+const dbConnection = require('./db');
+
 
 dotenv.config();
 
+dbConnection();
+
 const port = process.env.PORT;
 
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
-server.listen(port, () => {
+app.listen(port, () => {
   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
 });
 
-// app.get('/', (req: Request, res: Response) => {
-//   res.send('Express');
-// });
 
-// app.listen(port, () => {
-//   console.log(`⚡️[server]: Server is running at http://localhost:${port}`);
-// });
+// // Connect to MongoDB
+// mongoose.connect(
+//   "mongodb+srv://admin:" +
+//     "hejhej" +
+//     "@reindeerlichens.ro1gjeu.mongodb.net/?retryWrites=true&w=majority"
+// );
