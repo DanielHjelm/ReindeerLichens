@@ -31,27 +31,50 @@ import Image from "../models/images";
 
 // Get all images
 router.get("/", (req, res, next) => {
-  Image.find()
-    .select("_id original mask overlay")
-    .exec()
-    .then((docs: any) => {
-      const response = {
-        numberOfImagesInDB: docs.length,
-        images: docs,
-      };
-      if (docs.length !== 0) {
-        res.status(200).json(response);
-      } else {
-        res.status(404).json({
-          message: "No entries found",
-        });
-      }
-    })
-    .catch((err: any) => {
-      res.status(500).json({
-        error: err,
+  gfs.files.find().toArray((err: any, files: any) => {
+    // Check if files
+    if (!files || files.length === 0) {
+      return res.status(404).json({
+        err: "No files exist",
       });
-    });
+      
+    } else {
+      files.map((file: any) => {
+        if (
+          file.contentType === "image/jpeg" ||
+          file.contentType === "image/png"
+        ) {
+          file.isImage = true;
+        } else {
+          file.isImage = false;
+        }
+      }
+      );
+      res.status(200).json(files);
+
+    }
+  });
+  // Image.find()
+  //   .select("_id original mask overlay")
+  //   .exec()
+  //   .then((docs: any) => {
+  //     const response = {
+  //       numberOfImagesInDB: docs.length,
+  //       images: docs,
+  //     };
+  //     if (docs.length !== 0) {
+  //       res.status(200).json(response);
+  //     } else {
+  //       res.status(404).json({
+  //         message: "No entries found",
+  //       });
+  //     }
+  //   })
+  //   .catch((err: any) => {
+  //     res.status(500).json({
+  //       error: err,
+  //     });
+  //   });
 });
 
 // Get one image by name
