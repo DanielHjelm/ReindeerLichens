@@ -60,7 +60,7 @@ export default function imageName({ imageName, imageFile }) {
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.globalAlpha = lineOpacity;
-    ctx.strokeStyle = lineColor;
+    ctx.strokeStyle = lineColor; 
     ctx.lineWidth = lineWidth;
 
     window.addEventListener(

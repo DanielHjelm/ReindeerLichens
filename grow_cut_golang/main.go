@@ -5,108 +5,71 @@ import (
 	"fmt"
 	"image"
 	"image/color"
-	"image/jpeg"
 	"log"
 	"math"
 	"net/http"
-	"os"
 	"sync"
+
+	cellulargrowth "github.com/DanielHjelm/ReindeerLichens/cellularGrowth"
+	utils "github.com/DanielHjelm/ReindeerLichens/utils"
 )
-
-func copyArrayInt(arr [][]int) [][]int {
-	new_arr := createArrayInt(len(arr), len(arr[0]))
-	for x := 0; x < len(arr); x++ {
-		for y := 0; y < len(arr[0]); y++ {
-			new_arr[x][y] = arr[x][y]
-		}
-	}
-	return new_arr
-}
-
-func copyArrayFloat(arr [][]float64) [][]float64 {
-	new_arr := createArray(len(arr), len(arr[0]))
-	for x := 0; x < len(arr); x++ {
-		for y := 0; y < len(arr[0]); y++ {
-			new_arr[x][y] = arr[x][y]
-		}
-	}
-	return new_arr
-}
-
-func openImage(path string) (image.Image, error) {
-	f, err := os.Open(path)
-	if err != nil {
-		fmt.Println(err)
-		return nil, err
-	}
-	fi, _ := f.Stat()
-	fmt.Println(fi.Name())
-
-	defer f.Close()
-	img, err := jpeg.Decode(f)
-	if err != nil {
-		fmt.Println("Decoding error:", err.Error())
-		return nil, err
-	}
-
-	return img, nil
-}
-
-func saveImage(path string, img image.Image) error {
-	f, err := os.Create(path)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-	err = jpeg.Encode(f, img, nil)
-	return err
-}
-
-func l2(r, g, b uint32) float64 {
-	return math.Sqrt(float64(r*r + g*g + b*b))
-}
-
-func getImageMaxNorm(img image.Image) float64 {
-
-	bounds := img.Bounds()
-	var norm float64 = 0
-
-	for x := bounds.Min.X; x < bounds.Max.X; x++ {
-		for y := bounds.Min.Y; y < bounds.Max.Y; y++ {
-			r, g, b, _ := img.At(x, y).RGBA()
-			r, g, b = r/257, g/257, b/257
-			_norm := l2(r, g, b)
-
-			if _norm > norm {
-				norm = _norm
-			}
-		}
-	}
-	return norm
-}
 
 func g_function(x, c_max float64) float64 {
 	return 1 - x/c_max
 }
 
-func createArray(sizeX, sizeY int) [][]float64 {
-	a := make([][]float64, sizeX)
-	for i := range a {
-		a[i] = make([]float64, sizeY)
+func checkNeighbors(img image.Image, labels, labels_next [][]int) int {
+
+	searchIndex := -4
+
+	found := 0
+	globalMeanNorm := utils.ImageMeanNorm(img)
+	threshold := 0.07
+	wg := sync.WaitGroup{}
+	wg.Add(len(labels))
+	for x := 0; x < len(labels); x += 1 {
+		go func(x int) {
+			for y := 0; y < len(labels[0]); y += 1 {
+				if labels[x][y] == 0 {
+					continue
+				}
+			search:
+				for i := searchIndex; i <= searchIndex*-1; i++ {
+
+					for j := searchIndex; j <= searchIndex*-1; j++ {
+						if math.Sqrt(float64(i*i+j*j)) < 4 {
+							continue
+						}
+						if x+i >= 0 && x+i < len(labels) && y+j >= 0 && y+j < len(labels[0]) {
+							if labels[x+i][y+j] == 0 {
+								r, g, b, _ := img.At(x, y).RGBA()
+								r, g, b = r/257, g/257, b/257
+								_norm := utils.L2(uint8(r), uint8(g), uint8(b))
+								if math.Abs(_norm-globalMeanNorm) < threshold {
+									labels_next[x+i][y+j] = labels[x][y]
+									fmt.Printf("Found neighbor\n")
+									found += 1
+
+									break search
+								}
+							}
+						}
+					}
+				}
+			}
+		}(x)
 	}
-	return a
+
+	wg.Wait()
+	return found
+
 }
 
-func createArrayInt(sizeX, sizeY int) [][]int {
-	a := make([][]int, sizeX)
-	for i := range a {
-		a[i] = make([]int, sizeY)
-	}
-
-	return a
+func ImageMeanNorm(img image.Image) {
+	panic("unimplemented")
 }
 
-func assignBasedOnLocalMeanNorm(image image.Image, labels, labels_next [][]int, x, y int) int {
+func assignBasedOnLocalMeanNorm(img image.Image, labels, labels_next [][]int, x, y int) int {
 	if labels[x][y] != 0 {
 		return 0
 	}
@@ -125,9 +88,9 @@ func assignBasedOnLocalMeanNorm(image image.Image, labels, labels_next [][]int, 
 			for j := start; j <= start*-1; j++ {
 				if x+i >= 0 && x+i < len(labels) && y+j >= 0 && y+j < len(labels[0]) {
 					if labels[x+i][y+j] == 1 {
-						r, g, b, _ := image.At(x+i, y+j).RGBA()
+						r, g, b, _ := img.At(x+i, y+j).RGBA()
 						r, g, b = r/257, g/257, b/257
-						values = append(values, l2(r, g, b))
+						values = append(values, utils.L2(uint8(r), uint8(g), uint8(b)))
 						found++
 					}
 				}
@@ -153,31 +116,31 @@ func assignBasedOnLocalMeanNorm(image image.Image, labels, labels_next [][]int, 
 	mean := sum / float64(len(values))
 
 	// This pixel rgb
-	r, g, b, _ := image.At(x, y).RGBA()
+	r, g, b, _ := img.At(x, y).RGBA()
 	r, g, b = r/257, g/257, b/257
 
-	if norm := l2(r, g, b); norm > mean {
-		if (norm-mean)/mean <= threshold {
-			labels_next[x][y] = 1
-			return 1
-		}
-	} else {
-		if (mean-norm)/mean <= threshold*1.5 {
-			labels_next[x][y] = 1
-			return 1
-		}
-	}
-	// if norm := l2(r, g, b); (math.Abs(norm-mean))/mean < threshold {
-	// 	labels_next[x][y] = 1
-	// 	return 1
+	// if norm := l2(r, g, b); norm > mean {
+	// 	if (norm-mean)/mean <= threshold {
+	// 		labels_next[x][y] = 1
+	// 		return 1
+	// 	}
+	// } else {
+	// 	if (mean-norm)/mean <= threshold {
+	// 		labels_next[x][y] = 1
+	// 		return 1
+	// 	}
 	// }
+	if norm := utils.L2(uint8(r), uint8(g), uint8(b)); (math.Abs(norm-mean))/mean <= threshold {
+		labels_next[x][y] = 1
+		return 1
+	}
 	return 0
 }
 
 func grow_cut(img image.Image, initial_values []map[string]int) {
 	log.Printf("Starting grow cut")
-	labels := createArrayInt(img.Bounds().Max.X, img.Bounds().Max.Y)
-	strength := createArray(img.Bounds().Max.X, img.Bounds().Max.Y)
+	labels := utils.CreateArrayInt(img.Bounds().Max.X, img.Bounds().Max.Y)
+	strength := utils.CreateArray(img.Bounds().Max.X, img.Bounds().Max.Y)
 
 	for i := 0; i < len(initial_values); i++ {
 		x := initial_values[i]["x"]
@@ -188,8 +151,8 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 	}
 
 	// c_max := getImageMaxNorm(img)
-	labels_next := copyArrayInt(labels)
-	strength_i := copyArrayFloat(strength)
+	labels_next := utils.CopyArrayInt(labels)
+	strength_i := utils.CopyArrayFloat(strength)
 
 	found := true
 	count := 0
@@ -198,10 +161,10 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 	for found {
 		found = false
 		wg := new(sync.WaitGroup)
-		wg.Add(img.Bounds().Dx() / 2)
 		assigned := 0
 
 		for x := img.Bounds().Min.X; x < img.Bounds().Max.X; x += 1 {
+			wg.Add(1)
 			if x%2 == 0 && skipEvenX {
 
 				continue
@@ -211,8 +174,17 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 				continue
 			}
 			go func(x int) {
+
 				defer wg.Done()
 				for y := img.Bounds().Min.Y; y < img.Bounds().Max.Y; y += 1 {
+					if y%2 == 0 && skipEvenX {
+
+						continue
+					}
+					if y%2 != 0 && !skipEvenX {
+
+						continue
+					}
 
 					assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, x, y)
 
@@ -259,41 +231,49 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 				}
 			}(x)
 		}
-		wg.Wait()
-		if assigned > 0 {
-			found = true
-
-		}
 
 		// fmt.Print("insert y value here: ")
 		// input := bufio.NewScanner(os.Stdin)
 		// input.Scan()
-		count++
-		fmt.Printf("Iteration: %d\n", count)
 
-		if (count % 10) == 0 {
-			mask := copyArrayInt(labels_next)
+		if (count % 20) == 0 {
+			go func() {
+				mask := utils.CopyArrayInt(labels_next)
 
-			for i := 0; i < len(initial_values); i++ {
-				x := initial_values[i]["x"]
-				y := initial_values[i]["y"]
-				mask[x][y] = -1
+				for i := 0; i < len(initial_values); i++ {
+					x := initial_values[i]["x"]
+					y := initial_values[i]["y"]
+					mask[x][y] = -1
 
-			}
+				}
 
-			// err := saveImage("grow_cut.jpg", arrayToImage(_saveImg))
-			err := saveMaskOnTopOfImage(img, mask, "grow_cut.jpg")
-			if err != nil {
-				panic(err)
+				// err := saveImage("grow_cut.jpg", arrayToImage(_saveImg))
+				err := saveMaskOnTopOfImage(img, mask, "grow_cut.jpg")
+				if err != nil {
+					panic(err)
 
-			}
-			// fmt.Printf("Count: %d\n", count)
+				}
+				// fmt.Printf("Count: %d\n", count)
 
+			}()
 		}
+		wg.Wait()
+		if assigned > 0 {
+			found = true
+
+		} else {
+			// fmt.Printf("Only found %d, checking further out \n", assigned)
+			// newFound := checkNeighbors(img, labels, labels_next)
+			// if newFound > 0 {
+			// 	found = true
+			// }
+		}
+		count++
+		fmt.Printf("Changed %d Pixels on iteration: %d\n", assigned, count)
 
 		skipEvenX = !skipEvenX
-		labels = copyArrayInt(labels_next)
-		strength = copyArrayFloat(strength_i)
+		labels = utils.CopyArrayInt(labels_next)
+		strength = utils.CopyArrayFloat(strength_i)
 
 	}
 
@@ -317,25 +297,6 @@ func grow_cut(img image.Image, initial_values []map[string]int) {
 
 }
 
-func arrayToImage(arr [][]int) image.Image {
-	// create an image
-	img := image.NewRGBA(image.Rect(0, 0, len(arr), len(arr[0])))
-	for x := 0; x < len(arr); x++ {
-		for y := 0; y < len(arr[0]); y++ {
-			if arr[x][y] == 1 {
-				img.Set(x, y, color.RGBA{255, 255, 255, 255})
-			} else if arr[x][y] == -1 {
-				img.Set(x, y, color.RGBA{255, 0, 0, 255})
-			} else {
-				img.Set(x, y, color.RGBA{0, 0, 0, 255})
-			}
-
-		}
-	}
-	return img
-
-}
-
 func saveMaskOnTopOfImage(img image.Image, mask [][]int, filename string) error {
 
 	_img := image.NewRGBA(image.Rect(0, 0, len(mask), len(mask[0])))
@@ -356,7 +317,7 @@ func saveMaskOnTopOfImage(img image.Image, mask [][]int, filename string) error 
 		}
 	}
 
-	err := saveImage(filename, _img)
+	err := utils.SaveImage(filename, _img)
 
 	return err
 }
@@ -405,20 +366,22 @@ func main() {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		fmt.Printf("Success parsing")
 
-		// fmt.Printf("Pixels: %v\n", r_body.Pixels)
-		// fmt.Fprintf(w, "OK: %+v\n", r_body)
-
-		_image, err := openImage("../images/" + r_body.ImageName)
+		_image, err := utils.ReadImageAsArray("../images/" + r_body.ImageName)
 		if err != nil {
 			fmt.Printf("Error opening image: %v", err)
 			panic(err)
 		}
+		// imageArray := utils.ImageToArray(_image)
+		// fmt.Printf("Image: %v", imageArray)
+		// return
+		// utils.SaveImage("original.jpg", utils.ArrayToImage(_image))
+		cellulargrowth.CellularGrowth(_image, r_body.Pixels)
+		fmt.Printf("Done Cellular Growth\n")
 
-		busy = true
-		grow_cut(_image, r_body.Pixels)
-		busy = false
+		// busy = true
+		// grow_cut(_image, r_body.Pixels)
+		// busy = false
 
 	})
 
