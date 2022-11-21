@@ -3,8 +3,8 @@ import os
 import cv2
 import numpy as np
 
-from remove_frame.houghLines import removeFrameUsingHoughLines
-
+from remove_frame.removeBlueFrame import removeBlueFrame
+from remove_frame.removeFoldingRule import removeFoldingRule
 
 def generateMask(image):
 
@@ -47,7 +47,21 @@ def generateMask(image):
 
     return mask
 
+# Segmentation based on Otsu, tresholding on a grayscale version of the input image
+def generateOtsuMask(image):
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Gaussian filtering and Otsu thresholding
+    # print(np.shape(gray))
+    filtersize = np.ceil(np.shape(gray)[1]*0.01)
+    filtersize = int(filtersize)
+    # print(filtersize)
+    filt = cv2.GaussianBlur(gray,(15,15),cv2.BORDER_DEFAULT)
+    ret3,OtsuMask = cv2.threshold(filt,0,255,cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+    
+    return OtsuMask
 
+          
+          
 def saveImage(image, path):
     if not cv2.imwrite(path, image):
         raise Exception("Could not write image")
@@ -60,7 +74,9 @@ def createFolders(outputFolders=["result"]):
 
 
 def processImage(imagePath):
-    image = removeFrameUsingHoughLines(imagePath)
+    print(imagePath)
+    image = removeFoldingRule(imagePath)
+    print(np.shape(image))
     B, G, R = cv2.split(image)
     B = cv2.equalizeHist(B)
     G = cv2.equalizeHist(G)
@@ -70,6 +86,7 @@ def processImage(imagePath):
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()
     mask = generateMask(image)
+    # OtsuMask = generateOtsuMask(image)
     
     # Check the operating system and create folder for results depedning on that
     if sys.platform == "win32":
@@ -78,19 +95,27 @@ def processImage(imagePath):
         parentFolder = outputFolder + "/" + imagePath.split(".")[0]
     print(parentFolder)
     createFolders([parentFolder])
+    # Get file name of image
+    imName = imagePath.replace(os.path.dirname(imagePath)+'\\','') # Should surely be some smother way to get the image file orginigal name, but works
+    imName = imName[:-4]
     # Save image
     saveImage(
-        image, f"{parentFolder}/original.jpg")
+        image, f"{parentFolder}/{imName}_original.jpg")
     # Save mask
     saveImage(
-        mask, f"{parentFolder}/mask.jpg")
+        mask, f"{parentFolder}/{imName}_mask.jpg")
+    
+    # Save Otsu mask
+    #saveImage(
+    #    OtsuMask, f"{parentFolder}/{imName}_OtsuMask.jpg")
+    
     # Save image
     idx = (mask != 0)
     image[idx] = purple
     saveImage(
-        image, f"{parentFolder}/overlay.jpg")
+        image, f"{parentFolder}/{imName}_overlay.jpg")
     coverege = np.sum(mask == 255) / mask.size
-    with open(f"{parentFolder}/coverage.txt", "w") as f:
+    with open(f"{parentFolder}/{imName}_coverage.txt", "w") as f:
         f.write(f"coverege: {round(coverege * 100, 1)}% \n")
 
 
