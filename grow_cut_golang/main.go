@@ -18,53 +18,6 @@ func g_function(x, c_max float64) float64 {
 	return 1 - x/c_max
 }
 
-func checkNeighbors(img image.Image, labels, labels_next [][]int) int {
-
-	searchIndex := -4
-
-	found := 0
-	globalMeanNorm := utils.ImageMeanNorm(img)
-	threshold := 0.07
-	wg := sync.WaitGroup{}
-	wg.Add(len(labels))
-	for x := 0; x < len(labels); x += 1 {
-		go func(x int) {
-			for y := 0; y < len(labels[0]); y += 1 {
-				if labels[x][y] == 0 {
-					continue
-				}
-			search:
-				for i := searchIndex; i <= searchIndex*-1; i++ {
-
-					for j := searchIndex; j <= searchIndex*-1; j++ {
-						if math.Sqrt(float64(i*i+j*j)) < 4 {
-							continue
-						}
-						if x+i >= 0 && x+i < len(labels) && y+j >= 0 && y+j < len(labels[0]) {
-							if labels[x+i][y+j] == 0 {
-								r, g, b, _ := img.At(x, y).RGBA()
-								r, g, b = r/257, g/257, b/257
-								_norm := utils.L2(uint8(r), uint8(g), uint8(b))
-								if math.Abs(_norm-globalMeanNorm) < threshold {
-									labels_next[x+i][y+j] = labels[x][y]
-									fmt.Printf("Found neighbor\n")
-									found += 1
-
-									break search
-								}
-							}
-						}
-					}
-				}
-			}
-		}(x)
-	}
-
-	wg.Wait()
-	return found
-
-}
-
 func ImageMeanNorm(img image.Image) {
 	panic("unimplemented")
 }
@@ -90,7 +43,7 @@ func assignBasedOnLocalMeanNorm(img image.Image, labels, labels_next [][]int, x,
 					if labels[x+i][y+j] == 1 {
 						r, g, b, _ := img.At(x+i, y+j).RGBA()
 						r, g, b = r/257, g/257, b/257
-						values = append(values, utils.L2(uint8(r), uint8(g), uint8(b)))
+						values = append(values, utils.L2(int(r), int(g), int(b)))
 						found++
 					}
 				}
@@ -130,7 +83,7 @@ func assignBasedOnLocalMeanNorm(img image.Image, labels, labels_next [][]int, x,
 	// 		return 1
 	// 	}
 	// }
-	if norm := utils.L2(uint8(r), uint8(g), uint8(b)); (math.Abs(norm-mean))/mean <= threshold {
+	if norm := utils.L2(int(r), int(g), int(b)); (math.Abs(norm-mean))/mean <= threshold {
 		labels_next[x][y] = 1
 		return 1
 	}

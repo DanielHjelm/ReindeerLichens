@@ -12,15 +12,14 @@ import (
 	exif "github.com/rwcarlsen/goexif/exif"
 )
 
-func ImageMeanNorm(img image.Image) float64 {
-	bounds := img.Bounds()
+func ImageMeanNorm(img [][][]uint8) float64 {
+
 	var norm float64 = 0
 	var count int = 0
-	for row := bounds.Min.X; row < bounds.Max.X; row++ {
-		for col := bounds.Min.Y; col < bounds.Max.Y; col++ {
-			r, g, b, _ := img.At(col, row).RGBA()
-			r, g, b = r/257, g/257, b/257
-			_norm := L2(uint8(r), uint8(g), uint8(b))
+	for y := 0; y < len(img); y++ {
+		for x := 0; x < len(img[0]); x++ {
+			r, g, b := img[y][x][0], img[y][x][1], img[y][x][2]
+			_norm := L2(int(r), int(g), int(b))
 			norm += _norm
 			count += 1
 		}
@@ -168,7 +167,7 @@ func SaveImage(path string, img image.Image) error {
 	return err
 }
 
-func L2(r, g, b uint8) float64 {
+func L2(r, g, b int) float64 {
 	return math.Sqrt(float64(r*r + g*g + b*b))
 }
 
@@ -181,7 +180,7 @@ func GetImageMaxNorm(img image.Image) float64 {
 		for col := bounds.Min.Y; col < bounds.Max.Y; col++ {
 			r, g, b, _ := img.At(col, row).RGBA()
 			r, g, b = r/257, g/257, b/257
-			_norm := L2(uint8(r), uint8(g), uint8(b))
+			_norm := L2(int(r), int(g), int(b))
 
 			if _norm > norm {
 				norm = _norm
@@ -190,7 +189,6 @@ func GetImageMaxNorm(img image.Image) float64 {
 	}
 	return norm
 }
-
 
 func ArrayToImage(arr [][][]uint8) image.Image {
 	// create an image
