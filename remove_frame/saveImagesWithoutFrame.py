@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib
 import os
 from removeFrame import removeFrame
 from PIL import Image 
@@ -16,15 +16,13 @@ def saveImagesWithoutFrame(path_to_images, path_to_save_folder, number_of_images
         
         # Convert to correct colors
         without_frame = cv2.cvtColor(without_frame, cv2.COLOR_BGR2RGB)
-        
-        # Load image from array
-        im = Image.fromarray(without_frame) 
     
         # Save image to correct folder
-        im = im.save(path_to_save_folder+'/'+image)
+        matplotlib.image.imsave(path_to_save_folder+'/'+os.path.splitext(image)[0]+'.png', without_frame)
+
 
 if __name__ == "__main__":
     path_to_images = 'blue'
-    path_to_save_folder = 'withoutFrame/'
+    path_to_save_folder = 'withoutFrame'
     number_of_images_to_save = 10
     saveImagesWithoutFrame(path_to_images, path_to_save_folder, number_of_images_to_save)
