@@ -87,3 +87,20 @@ To clear a drawing it is easiest to reload the page
 
 4. Start golang server
    - RUN: go run main.go
+
+# Important!
+
+At this time both programs requrie that all wanted images are located under the parent directory of the grow_cut_golang folder, that is
+
+```
+├── ReindeerLichens
+│   ├── grow_cut_golang/
+│   ├── images/      <--- Images goes here
+
+```
+
+## Info
+
+Feel free to alter constants such as the threshold value in cg.go -> assignBasedOnLocalMeanNorm and cg.go -> FillInDistantNeighbors.
+
+The code does not display the progress but it does save the current state every 40 iterations, the image and the mask can be found under the created result folder. You can change how often the program saves at the top of the cg.go -> CellularGrowth function.

@@ -2,7 +2,6 @@ package cellulargrowth
 
 import (
 	"fmt"
-	"runtime"
 	"sync"
 	"time"
 
@@ -10,8 +9,7 @@ import (
 )
 
 func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
-	fmt.Printf("Running on %d cores\n", runtime.NumCPU())
-	runtime.GOMAXPROCS(runtime.NumCPU())
+
 	saveEveryNIterations := 40
 	labels := utils.CreateArrayInt(len(img), len(img[0]))
 
