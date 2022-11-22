@@ -1,3 +1,4 @@
+// Not used anymore but saved here for later reference
 // Multer and Storage in GridFS
 import multer from "multer";
 import {GridFsStorage} from 'multer-gridfs-storage'

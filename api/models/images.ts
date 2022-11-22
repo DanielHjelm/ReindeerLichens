@@ -1,3 +1,5 @@
+
+// Not used anymore but saved here for later reference
 import mongoose from "mongoose";
 const { Schema } = mongoose;
 
