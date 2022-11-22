@@ -86,6 +86,7 @@ To clear a drawing it is easiest to reload the page
    - RUN: npm run dev
 
 4. Start golang server
+   - RUN: go get .
    - RUN: go run main.go
 
 # Important!
