@@ -12,7 +12,7 @@ import (
 func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 	fmt.Printf("Running on %d cores\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
+	saveEveryNIterations := 40
 	labels := utils.CreateArrayInt(len(img), len(img[0]))
 
 	fmt.Printf("Starting cellular growth on image with size %dx%d\n", len(img), len(img[0]))
@@ -63,7 +63,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 
 		}
 
-		if (iteration % 40) == 0 {
+		if (iteration % saveEveryNIterations) == 0 {
 			fmt.Printf("Saving Image\n")
 			go func() {
 				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
