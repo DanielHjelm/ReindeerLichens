@@ -63,7 +63,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 
 		}
 
-		if (iteration % 10) == 0 {
+		if (iteration % 40) == 0 {
 			fmt.Printf("Saving Image\n")
 			go func() {
 				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
@@ -78,7 +78,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 		iteration++
 		wg.Wait()
 
-		if assigned > 30 {
+		if assigned > 500 {
 			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
 			done = false
 
