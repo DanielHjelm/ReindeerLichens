@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	cellulargrowth "github.com/DanielHjelm/ReindeerLichens/cellularGrowth"
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
@@ -41,6 +42,11 @@ func main() {
 		if err != nil {
 			fmt.Printf("Error opening image: %v", err)
 			panic(err)
+		}
+
+		_, err = os.Stat("result")
+		if os.IsNotExist(err) {
+			os.Mkdir("result", 0755)
 		}
 
 		cellulargrowth.CellularGrowth(_image, r_body.Pixels)
