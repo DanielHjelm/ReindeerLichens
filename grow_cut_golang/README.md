@@ -76,7 +76,7 @@ To clear a drawing it is easiest to reload the page
 # Setup
 
 1. <a href="https://go.dev/doc/install">Install GO</a>
-
+-///9/
 2. <a href="https://nodejs.org/en/">Install NodeJs</a>
 
 3. Start web server

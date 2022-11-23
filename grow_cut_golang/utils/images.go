@@ -5,7 +5,9 @@ import (
 	"image"
 	"image/color"
 	"image/jpeg"
+	"image/png"
 	"math"
+	"net/http"
 
 	"os"
 
@@ -67,7 +69,51 @@ func SaveMaskOnTopOfImage(img [][][]uint8, mask [][]int, filename string) error 
 	return err
 }
 
-func ReadImageAsArray(path string) ([][][]uint8, error) {
+func GetFileContentType(ouput *os.File) (string, error) {
+
+	// to sniff the content type only the first
+	// 512 bytes are used.
+
+	buf := make([]byte, 512)
+
+	_, err := ouput.Read(buf)
+
+	if err != nil {
+		return "", err
+	}
+
+	// the function that actually does the trick
+	contentType := http.DetectContentType(buf)
+
+	return contentType, nil
+}
+
+func ReadPngAsArray(path string) ([][][]uint8, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	img, err := png.Decode(f)
+	if err != nil {
+		return nil, err
+	}
+	bounds := img.Bounds()
+	w, h := bounds.Max.X, bounds.Max.Y
+	var imgArray [][][]uint8 = make([][][]uint8, h)
+	for y := 0; y < h; y++ {
+		imgArray[y] = make([][]uint8, w)
+		for x := 0; x < w; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			r, g, b = r>>8, g>>8, b>>8
+			imgArray[y][x] = []uint8{uint8(r), uint8(g), uint8(b)}
+		}
+
+	}
+	return imgArray, nil
+}
+
+func ReadJpegAsArray(path string) ([][][]uint8, error) {
 	f, err := os.Open(path)
 	if err != nil {
 		fmt.Println(err)
@@ -124,6 +170,34 @@ func ReadImageAsArray(path string) ([][][]uint8, error) {
 	}
 	fmt.Printf("Read image with width %d and height %d\n", len(imageArray[0]), len(imageArray))
 	return imageArray, nil
+
+}
+
+func ReadImageAsArray(path string) ([][][]uint8, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	// Get the file content
+	contentType, err := GetFileContentType(f)
+
+	if err != nil {
+		panic(err)
+	}
+
+	switch contentType {
+	case "image/png":
+		fmt.Printf("PNG file detected\n")
+		return ReadPngAsArray(path)
+	case "image/jpeg":
+		fmt.Printf("JPEG file detected\n")
+		return ReadJpegAsArray(path)
+
+	}
+
+	return nil, fmt.Errorf("Unknown file detected")
+
 }
 
 func RotateImage(img [][][]uint8, angle float64) [][][]uint8 {
