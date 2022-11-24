@@ -54,7 +54,7 @@ def removeBlueFrame(image_path):
     output = np.zeros((w,h))
     output = img[y:y+h, x:x+w]
 
-    return output
+    return output, x, y, w, h
 
 if __name__ == "__main__":
     image = removeBlueFrame('IMG_0155.jpg')

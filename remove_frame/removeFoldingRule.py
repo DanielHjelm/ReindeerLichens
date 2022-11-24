@@ -80,7 +80,7 @@ def removeFrameUsingHoughLines(image_path, dilation_kernel = 20):
 
         # If returned image is somewhat sqaure, return results
         if (0.9 <= np.shape(output)[0]/np.shape(output)[1] <= 1.1) and (0.2 < (np.shape(output)[0]*np.shape(output)[1])/(np.shape(img)[0]*np.shape(img)[1]) < 0.65):
-            return output
+            return output, x, y, w, h
 
         # If output image not somewhat or image cut to much or to little
         else:
