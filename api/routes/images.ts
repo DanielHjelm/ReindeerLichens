@@ -136,7 +136,18 @@ router.get("/:imageName", async (req, res) => {
         } else {
           // File found, return file
           const readStream = gridfsBucket.openDownloadStream(file._id);
-          readStream.pipe(res);
+
+          // Send BASE64 encoded image
+          let data = ''
+          readStream.on("data", (chunk: any) => {
+            data += chunk.toString('base64')
+          });
+          readStream.on("end", () => {
+            res.send(data)
+          });
+
+          // Pipe file to response
+          // readStream.pipe(res);
         }
       }
     );
@@ -147,6 +158,7 @@ router.get("/:imageName", async (req, res) => {
 
 // Post request, upload image
 router.post("/", upload.single("file"), (req, res) => {
+  console.log(req.file);
   // console.log(req.file);
   if (req.file == undefined) {
     return res.status(400).send({
