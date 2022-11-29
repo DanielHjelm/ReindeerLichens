@@ -2,11 +2,12 @@ import React, { LegacyRef, useEffect } from "react";
 import { getImageAndMask } from "../../Utils/db";
 import axios from "axios";
 
-export default function Mask({ mask, image, imageName }: { mask: string; image: string; imageName: string }) {
+export default function Mask({ mask, image, fileName }: { mask: string; image: string; fileName: string }) {
   let [imageSize, setImageSize] = React.useState({ width: 0, height: 0 });
   let [maskSize, setMaskSize] = React.useState({ width: 0, height: 0 });
   let [lineWidth, setLineWidth] = React.useState(20);
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
+  
   //   let [isDrawing, setIsDrawing] = React.useState(false);
   let isDrawing = false;
   let [maskLoaded, setMaskLoaded] = React.useState(false);
@@ -82,6 +83,26 @@ export default function Mask({ mask, image, imageName }: { mask: string; image: 
     }
   }, [maskLoaded]);
 
+  function resetCanvas() {
+    const msk = new Image();
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+    msk.src = mask;
+    ctxRef.current!.lineWidth = lineWidth;
+    ctxRef.current!.lineCap = "round";
+    ctxRef.current!.strokeStyle = "black";
+    msk.onload = () => {
+      ctx.drawImage(msk, 0, 0);
+      const imageData = ctx.getImageData(0, 0, msk.width, msk.height);
+      let mask = removeBackground(imageData);
+
+      ctx.putImageData(mask, 0, 0);
+      setMaskLoaded(true);
+      setMaskSize({ width: msk.width, height: msk.height });
+    };
+  }
+
   // Function for starting the drawing
   const startDrawing = (e: any) => {
     if (ctxRef.current === undefined) {
@@ -115,29 +136,27 @@ export default function Mask({ mask, image, imageName }: { mask: string; image: 
     ctxRef.current.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     ctxRef.current.stroke();
   };
+  async function base64ToFile(b64: string): Promise<File> {
+    let blob = await (await fetch(b64)).blob();
+    let fileType = b64.split(";")[0].split(":")[1];
+    let end = fileName.split(".")[1];
+    let _fileName = fileName.split(".")[0] + "_mask." + end;
+    let file = new File([blob], _fileName, { type: fileType });
+
+    return file;
+  }
 
   async function saveChanges() {
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
     let formdata = new FormData();
-    // let blob = await new Promise<Blob>((resolve, reject) => {
-    //   canvas.toBlob((blob) => {
-    //     if (blob) {
-    //       resolve(blob);
-    //     } else {
-    //       reject(new Error("Canvas is empty"));
-    //     }
-    //   });
-    // });
     let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
     let mask = blackoutBackground(imageData);
     console.log(mask);
-    let fileType = "image/png";
-    if (imageName.toLowerCase().endsWith(".jpg")) {
-      fileType = "image/jpeg";
-    }
-    let blob = new Blob([mask.data], { type: fileType });
+    ctxRef.current!.putImageData(mask, 0, 0);
+    let b64 = canvas.toDataURL();
+    let file = await base64ToFile(b64);
 
-    formdata.append("file", blob);
+    formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     console.log(res);
@@ -183,6 +202,9 @@ export default function Mask({ mask, image, imageName }: { mask: string; image: 
         </div>
         <div className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer" onClick={saveChanges}>
           Save
+        </div>
+        <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer" onClick={resetCanvas}>
+          Reset
         </div>
       </div>
       <div id="line-width-indicator" className="absolute rounded-full"></div>

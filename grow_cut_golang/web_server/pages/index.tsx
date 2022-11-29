@@ -4,6 +4,7 @@ import Image from "next/image";
 import axios from "axios";
 
 import Link from "next/link";
+import imageName from "./[imageName]";
 
 const Home = ({ paths }: { paths: string }) => {
   console.log({ paths });
@@ -13,39 +14,46 @@ const Home = ({ paths }: { paths: string }) => {
       <div className="flex flex-col justify-start items-start">
         <Head>Paths</Head>
         {endpoints.map((path: { fileName: string; hasMask: boolean }, index: number) => (
-          <Link className="" href={`/${path.fileName}`} key={path.fileName}>
-            {" "}
-            <div className="flex space-x-2 justify-center items-center">
-              {path.hasMask ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-4 h-4 text-green-700"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-4 h-4 text-red-400"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                  />
-                </svg>
-              )}
-              <p id={index.toString()}>{path.fileName}</p>
-            </div>
-          </Link>
+          <div className="flex flex-row items-end w-full justify-between  min-w-[50%]">
+            <Link className="" href={`/${path.fileName}`} key={path.fileName}>
+              {" "}
+              <div className="flex space-x-2 justify-center items-center">
+                {path.hasMask ? (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4 text-green-700"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="w-4 h-4 text-red-400"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                    />
+                  </svg>
+                )}
+                <p id={index.toString()}>{path.fileName}</p>
+              </div>
+            </Link>
+            {path.hasMask && (
+              <a className="" href={`/masks/${path.fileName}`}>
+                To mask
+              </a>
+            )}
+          </div>
         ))}
       </div>
     </div>
