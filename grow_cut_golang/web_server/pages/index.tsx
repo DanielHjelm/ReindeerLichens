@@ -13,7 +13,7 @@ const Home = ({ paths }: { paths: string }) => {
       <div className="flex flex-col justify-start items-start">
         <Head>Paths</Head>
         {endpoints.map((path: { fileName: string; hasMask: boolean }, index: number) => (
-          <Link className="" href={`/${path.fileName}`}>
+          <Link className="" href={`/${path.fileName}`} key={path.fileName}>
             {" "}
             <div className="flex space-x-2 justify-center items-center">
               {path.hasMask ? (
@@ -54,9 +54,12 @@ const Home = ({ paths }: { paths: string }) => {
 
 export async function getServerSideProps() {
   console.log("getServerSideProps in pages/index.tsx");
-  let res = await axios.get(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images`);
+  let res = await axios.get(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`, {
+    validateStatus: (status) => status < 500,
+  });
 
   if (res.status !== 200) {
+    console.log(res.data);
     return {
       notFound: true,
     };

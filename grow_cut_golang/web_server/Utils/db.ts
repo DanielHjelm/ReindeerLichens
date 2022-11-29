@@ -1,12 +1,15 @@
 import axios from "axios";
-export async function getImageAndMask(imageName: string): Promise<{ image: string; mask: string; notFound: boolean }> {
-  console.log(`Fetching image ${imageName}`);
+export async function getImageAndMask(fileName: string): Promise<{ image: string; mask: string; fileName: string; notFound: boolean }> {
+  console.log(`Fetching image ${fileName}`);
   try {
-    let imageReq = axios.get(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images/${imageName}`);
+    let imageReq = axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images/${fileName}`);
 
-    let maskReq = axios.get(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images/${imageName.split(".")[0]}_mask.${imageName.split(".")[1]}`, {
-      validateStatus: () => true,
-    });
+    let maskReq = axios.get(
+      `http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images/${fileName.split(".")[0]}_mask.${fileName.split(".")[1]}`,
+      {
+        validateStatus: () => true,
+      }
+    );
 
     let [imageRes, maskRes] = await Promise.all([imageReq, maskReq]);
     // if (imageRes.status !== 200 || maskRes.status !== 200) {
@@ -18,13 +21,14 @@ export async function getImageAndMask(imageName: string): Promise<{ image: strin
       return {
         notFound: true,
         image: "undefined",
+        fileName: "undefined",
         mask: "undefined",
       };
     }
 
     let image = imageRes.data;
     let mask = maskRes.data;
-    if (imageName.toLowerCase().endsWith(".png")) {
+    if (fileName.toLowerCase().endsWith(".png")) {
       image = `data:image/png;base64,${image}`;
       mask = `data:image/png;base64,${mask}`;
     } else {
@@ -35,10 +39,11 @@ export async function getImageAndMask(imageName: string): Promise<{ image: strin
       console.log("Mask server returned error: ", maskRes.statusText);
       mask = "undefined";
     }
-
+    console.log("Success fetching image and mask");
     return {
       mask: mask,
       image: image,
+      fileName: fileName,
       notFound: false,
     };
   } catch (error) {
@@ -47,6 +52,7 @@ export async function getImageAndMask(imageName: string): Promise<{ image: strin
       notFound: true,
       image: "undefined",
       mask: "undefined",
+      fileName: "undefined",
     };
   }
 }

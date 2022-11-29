@@ -23,7 +23,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		labels[y][x] = 1
 	}
 
-	utils.SaveMask(labels, "initial_mask.jpg")
+	// utils.SaveMask(labels, "initial_mask.jpg")
 
 	labels_next := utils.CreateArrayInt(len(img), len(img[0]))
 

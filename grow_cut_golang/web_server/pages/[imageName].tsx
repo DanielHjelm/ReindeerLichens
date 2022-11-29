@@ -200,7 +200,7 @@ export async function getStaticProps(context: any) {
 // }
 
 export async function getStaticPaths() {
-  let res = await axios.get(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images`);
+  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
 
   if (res.status !== 200) {
     return {

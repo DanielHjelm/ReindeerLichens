@@ -19,7 +19,7 @@ export default function Masks({ images }: { images: string[] }) {
 
 export async function getStaticProps() {
   console.log("getStaticProps in pages/masks/index.tsx");
-  let res = await axios.get(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images`);
+  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
 
   if (res.status !== 200) {
     return {
