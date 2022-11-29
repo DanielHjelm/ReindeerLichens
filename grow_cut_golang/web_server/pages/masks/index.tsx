@@ -27,15 +27,26 @@ export async function getStaticProps() {
     };
   }
 
-  let imageNames = res.data.images.map((image: any) => image.filename);
+  let fileNames = res.data["images"].map((path: any) => path["filename"]);
+  console.log({ fileNames: fileNames });
 
-  console.log({ paths: imageNames });
+  let masks = fileNames.filter((fileName: string) => fileName.includes("_mask"));
+  let images = fileNames.filter((fileName: string) => !fileName.includes("_mask"));
+  let result = [];
+  for (let i = 0; i < images.length; i++) {
+    let image = images[i];
+    let mask = masks.find((mask: string) => mask.includes(image.split(".")[0]));
+
+    if (mask !== undefined) {
+      result.push(image);
+    }
+  }
 
   // console.log(res);
   // console.log(res);
   return {
     props: {
-      images: imageNames,
+      images: result,
     },
   };
 }

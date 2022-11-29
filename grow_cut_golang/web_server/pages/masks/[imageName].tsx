@@ -130,7 +130,7 @@ export async function getStaticPaths() {
       notFound: true,
     };
   }
-  let images = (await res.data())["images"] as string[];
+  let images = res.data["images"] as string[];
   let imageNames = images.map((path: any) => path["filename"]).filter((name: string) => name.includes("_mask") === false);
 
   let paths = imageNames.map((name: string) => ({

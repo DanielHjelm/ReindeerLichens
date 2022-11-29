@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import _Image from "next/image";
 import axios from "axios";
-import fs, { copyFileSync } from "fs";
 import NextScript from "next/script";
 import { getImageAndMask } from "../Utils/db";
 
@@ -17,7 +16,7 @@ const getBase64 = (file: Blob) => {
 
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
   let [loaded, setLoaded] = React.useState(false);
-  let [image, setImage] = React.useState("");
+
   const [canvasRef, setCanvasRef] = useState(useRef(null));
   const ctxRef = useRef<CanvasRenderingContext2D>();
   const [isDrawing, setIsDrawing] = useState(false);
@@ -40,8 +39,9 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          imageName: imageName,
+          fileName: imageName,
           pixels: pixels,
+          img: imageFile,
         }),
       });
       const data = await response.json();
@@ -164,7 +164,7 @@ export async function getStaticProps(context: any) {
 
   return {
     props: {
-      imageName: "test",
+      imageName: imageName,
       imageFile: imageAndMask.image,
     },
   };

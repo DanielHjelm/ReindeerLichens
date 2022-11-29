@@ -69,14 +69,14 @@ func SaveMaskOnTopOfImage(img [][][]uint8, mask [][]int, filename string) error 
 	return err
 }
 
-func GetFileContentType(ouput *os.File) (string, error) {
+func GetFileContentType(file *os.File) (string, error) {
 
 	// to sniff the content type only the first
 	// 512 bytes are used.
 
 	buf := make([]byte, 512)
 
-	_, err := ouput.Read(buf)
+	_, err := file.Read(buf)
 
 	if err != nil {
 		return "", err
@@ -170,6 +170,22 @@ func ReadJpegAsArray(path string) ([][][]uint8, error) {
 	}
 	fmt.Printf("Read image with width %d and height %d\n", len(imageArray[0]), len(imageArray))
 	return imageArray, nil
+
+}
+
+func ImageToArray(img image.Image) [][][]uint8 {
+
+	imageArray := make([][][]uint8, img.Bounds().Max.Y)
+	for y := 0; y < img.Bounds().Max.Y; y++ {
+		imageArray[y] = make([][]uint8, img.Bounds().Max.X)
+		for x := 0; x < img.Bounds().Max.X; x++ {
+			r, g, b, _ := img.At(x, y).RGBA()
+			r, g, b = r/257, g/257, b/257
+			imageArray[y][x] = []uint8{uint8(r), uint8(g), uint8(b)}
+
+		}
+	}
+	return imageArray
 
 }
 

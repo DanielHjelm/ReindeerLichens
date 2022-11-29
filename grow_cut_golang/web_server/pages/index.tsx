@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import Image from "next/image";
 import axios from "axios";
-import fs from "fs";
+
 import Link from "next/link";
 
 const Home = ({ paths }: { paths: string }) => {
@@ -23,7 +23,7 @@ const Home = ({ paths }: { paths: string }) => {
                   viewBox="0 0 24 24"
                   strokeWidth={1.5}
                   stroke="currentColor"
-                  className="w-4 h-4 text-geen-400"
+                  className="w-4 h-4 text-green-700"
                 >
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
@@ -64,27 +64,18 @@ export async function getServerSideProps() {
   let fileNames = res.data["images"].map((path: any) => path["filename"]);
   console.log({ fileNames: fileNames });
 
-  for (let i = 0; i < fileNames.length; i++) {
-    let fileName = fileNames[i];
-    if (!fileName.includes("mask")) {
-      let end = fileName.split(".")[1];
-      if (fileNames.includes(fileName.replace(`.${end}`, `_mask.${end}`))) {
-        fileNames[i] = {
-          fileName: fileName,
-          hasMask: true,
-        };
-      } else {
-        fileNames[i] = {
-          fileName: fileName,
-          hasMask: false,
-        };
-      }
-    }
+  let masks = fileNames.filter((fileName: string) => fileName.includes("_mask"));
+  let images = fileNames.filter((fileName: string) => !fileName.includes("_mask"));
+
+  for (let i = 0; i < images.length; i++) {
+    let image = images[i];
+    let mask = masks.find((mask: string) => mask.includes(image.split(".")[0]));
+    images[i] = { fileName: image, hasMask: mask !== undefined };
   }
 
   return {
     props: {
-      paths: JSON.stringify(fileNames),
+      paths: JSON.stringify(images),
     },
   };
 }

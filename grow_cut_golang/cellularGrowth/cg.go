@@ -9,7 +9,7 @@ import (
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
 )
 
-func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
+func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState bool) [][]int {
 
 	numProcs := runtime.NumCPU()
 	saveEveryNIterations := 40
@@ -61,13 +61,13 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 			}(proc)
 		}
 
-		if (iteration % saveEveryNIterations) == 0 {
+		if shouldSaveState && (iteration%saveEveryNIterations) == 0 {
 			fmt.Printf("Saving Image\n")
 			go func() {
 				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
 				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask%d.jpg", imageCount))
-				SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth.jpg"))
-				utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask.jpg"))
+				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth.jpg"))
+				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask.jpg"))
 				imageCount++
 
 			}()
@@ -76,7 +76,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 		iteration++
 		wg.Wait()
 
-		if assigned > 500 {
+		if assigned > 200 {
 			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
 			done = false
 
@@ -98,8 +98,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 	fmt.Printf("Cellular growth took %s to run %d iterations\n", elapsed, iteration)
 	fmt.Printf("Average time per iteration: %s\n", elapsed/time.Duration(iteration))
 
-	SaveState(img, labels_next, initial_values, "Final.jpg")
-	utils.SaveMask(labels_next, "grow_cut_mask.jpg")
+	return labels_next
 
 }
 
