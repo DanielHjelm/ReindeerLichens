@@ -1,11 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import _Image from "next/image";
-
-import fs from "fs";
+import axios from "axios";
 import NextScript from "next/script";
+import { getImageAndMask } from "../Utils/db";
 
 // Image to base64
-const getBase64 = (file) => {
+const getBase64 = (file: Blob) => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -14,18 +14,18 @@ const getBase64 = (file) => {
   });
 };
 
-export default function imageName({ imageName, imageFile }) {
+export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
   let [loaded, setLoaded] = React.useState(false);
-  let [image, setImage] = React.useState("");
+
   const [canvasRef, setCanvasRef] = useState(useRef(null));
-  const ctxRef = useRef(null);
+  const ctxRef = useRef<CanvasRenderingContext2D>();
   const [isDrawing, setIsDrawing] = useState(false);
   const [lineWidth, setLineWidth] = useState(3);
   const [lineColor, setLineColor] = useState("red");
   const [lineOpacity, setLineOpacity] = useState(100);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   let [endPoint, setEndPoint] = React.useState("localhost:3001/start");
-  let [pixels, setPixels] = React.useState([]);
+  let [pixels, setPixels] = React.useState<{ x: number; y: number }[]>([]);
 
   async function sendRequest() {
     try {
@@ -39,8 +39,9 @@ export default function imageName({ imageName, imageFile }) {
           "Access-Control-Allow-Origin": "*",
         },
         body: JSON.stringify({
-          imageName: imageName,
+          fileName: imageName,
           pixels: pixels,
+          img: imageFile,
         }),
       });
       const data = await response.json();
@@ -53,14 +54,13 @@ export default function imageName({ imageName, imageFile }) {
   // Initialization when the component
   // mounts for the first time
   useEffect(() => {
-    let canvas = document.getElementById("canvas");
-    setCanvasRef();
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     ctx.globalAlpha = lineOpacity;
-    ctx.strokeStyle = lineColor; 
+    ctx.strokeStyle = lineColor;
     ctx.lineWidth = lineWidth;
 
     window.addEventListener(
@@ -84,9 +84,9 @@ export default function imageName({ imageName, imageFile }) {
   }, [lineColor, lineOpacity, lineWidth]);
 
   // Function for starting the drawing
-  const startDrawing = (e) => {
-    ctxRef.current.beginPath();
-    ctxRef.current.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
+    ctxRef.current!.beginPath();
+    ctxRef.current!.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
 
     setPixels((prev) => [...prev, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     setIsDrawing(true);
@@ -94,23 +94,23 @@ export default function imageName({ imageName, imageFile }) {
 
   // Function for ending the drawing
   const endDrawing = () => {
-    ctxRef.current.closePath();
+    ctxRef.current!.closePath();
     setIsDrawing(false);
   };
 
-  const draw = (e) => {
+  const draw = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
     if (!isDrawing) {
       return;
     }
-    ctxRef.current.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+    ctxRef.current!.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     console.log("Drawing");
     setPixels((prev) => [...prev, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
 
-    ctxRef.current.stroke();
+    ctxRef.current!.stroke();
   };
 
   return (
-    <div className={`relative w-[${imageSize.width}px]`} height={imageSize.height}>
+    <div className={`relative w-[${imageSize.width}px]`}>
       <NextScript />
       <style jsx global>{`
         /* Other global styles such as 'html, body' etc... */
@@ -127,7 +127,6 @@ export default function imageName({ imageName, imageFile }) {
         onMouseDown={startDrawing}
         onMouseUp={endDrawing}
         onMouseMove={draw}
-        ref={ctxRef}
       ></canvas>
       <img src={imageFile} alt="" />
 
@@ -152,14 +151,21 @@ export default function imageName({ imageName, imageFile }) {
   );
 }
 
-export async function getStaticProps(context) {
+export async function getStaticProps(context: any) {
   const imageName = context.params.imageName;
-  const imageFile = `data:image/jpeg;charset=utf-8;base64,${fs.readFileSync("../../images/" + imageName).toString("base64")}`;
+
+  let imageAndMask = await getImageAndMask(imageName);
+
+  if (imageAndMask.notFound) {
+    return {
+      notFound: true,
+    };
+  }
 
   return {
     props: {
       imageName: imageName,
-      imageFile: imageFile,
+      imageFile: imageAndMask.image,
     },
   };
 
@@ -171,15 +177,49 @@ export async function getStaticProps(context) {
   };
 }
 
-export async function getStaticPaths() {
-  let paths = fs.readdirSync("../../images");
+// export async function getStaticPaths() {
+//   let res = await fetch(`http://${process.env.IMAGES_API_HOST ?? "localhost"}/images`);
 
-  console.log({ paths });
-  let t = paths.map((path) => {
-    return { params: { imageName: path } };
-  });
+//   if (res.status !== 200) {
+//     return {
+//       notFound: true,
+//     };
+//   }
+
+//   let imageNames = await res.json();
+
+//   console.log({ paths: imageNames });
+
+//   // console.log(res);
+//   // console.log(res);
+//   return {
+//     paths: {
+//       imageName: await JSON.parse(imageNames),
+//     },
+//   };
+// }
+
+export async function getStaticPaths() {
+  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
+
+  if (res.status !== 200) {
+    return {
+      notFound: true,
+    };
+  }
+
+  let body = res.data;
+  console.log({ body });
+  let images = body.images;
+  let fileNames = images.map((image: any) => image.filename);
+  console.log({ fileNames });
+
   return {
-    paths: t,
+    paths: fileNames.map((fileName: string) => ({
+      params: {
+        imageName: fileName,
+      },
+    })),
     fallback: false,
   };
 }

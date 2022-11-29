@@ -9,10 +9,10 @@ import (
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
 )
 
-func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
-	fmt.Printf("Running on %d cores\n", runtime.NumCPU())
-	runtime.GOMAXPROCS(runtime.NumCPU())
+func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState bool) [][]int {
 
+	numProcs := runtime.NumCPU()
+	saveEveryNIterations := 40
 	labels := utils.CreateArrayInt(len(img), len(img[0]))
 
 	fmt.Printf("Starting cellular growth on image with size %dx%d\n", len(img), len(img[0]))
@@ -23,7 +23,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 		labels[y][x] = 1
 	}
 
-	utils.SaveMask(labels, "initial_mask.jpg")
+	// utils.SaveMask(labels, "initial_mask.jpg")
 
 	labels_next := utils.CreateArrayInt(len(img), len(img[0]))
 
@@ -42,34 +42,32 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 		assigned = 0
 		done = true
 
-		for y := 0; y < yDim; y++ {
-			// if (y%2 == 0 && skipEven) || (y%2 != 0 && !skipEven) {
-			// 	continue
-			// }
+		for proc := 0; proc < numProcs; proc++ {
 			wg.Add(1)
-			go func(y int) {
+			go func(proc int) {
 				defer wg.Done()
+				for y := proc * yDim / numProcs; y < (proc+1)*yDim/numProcs; y++ {
+					for x := 0; x < xDim; x++ {
 
-				for x := 0; x < xDim; x++ {
+						// if (x%2 == 0 && skipEven) || (x%2 != 0 && !skipEven) {
+						// 	continue
+						// }
 
-					// if (x%2 == 0 && skipEven) || (x%2 != 0 && !skipEven) {
-					// 	continue
-					// }
+						assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, y, x)
 
-					assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, y, x)
-
+					}
 				}
-			}(y)
 
+			}(proc)
 		}
 
-		if (iteration % 10) == 0 {
+		if shouldSaveState && (iteration%saveEveryNIterations) == 0 {
 			fmt.Printf("Saving Image\n")
 			go func() {
 				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
 				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask%d.jpg", imageCount))
-				SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth.jpg"))
-				utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask.jpg"))
+				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth.jpg"))
+				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask.jpg"))
 				imageCount++
 
 			}()
@@ -78,7 +76,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 		iteration++
 		wg.Wait()
 
-		if assigned > 30 {
+		if assigned > 200 {
 			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
 			done = false
 
@@ -100,8 +98,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int) {
 	fmt.Printf("Cellular growth took %s to run %d iterations\n", elapsed, iteration)
 	fmt.Printf("Average time per iteration: %s\n", elapsed/time.Duration(iteration))
 
-	SaveState(img, labels_next, initial_values, "Final.jpg")
-	utils.SaveMask(labels_next, "grow_cut_mask.jpg")
+	return labels_next
 
 }
 
@@ -206,87 +203,98 @@ func FillInDistantNeighbors(img [][][]uint8, labels [][]int) int {
 	found := 0
 
 	wg := new(sync.WaitGroup)
-	for y := 0; y < len(img); y += 1 {
+	nProcs := runtime.NumCPU()
+	for proc := 0; proc < nProcs; proc++ {
 		wg.Add(1)
-		go func(y int) {
+		go func(proc int) {
 			defer wg.Done()
-			for x := 0; x < len(img[0]); x += 1 {
-				if labels[y][x] == 0 {
-					continue
-				}
-				start := -1
-				limit := -3
-				mRed := 0.0
-				mGreen := 0.0
-				mBlue := 0.0
-				nValues := 0
+			for y := proc * len(labels) / nProcs; y < (proc+1)*len(labels)/nProcs; y++ {
+				for x := 0; x < len(img[0]); x += 1 {
+					if labels[y][x] == 0 {
+						continue
+					}
+					start := -1
+					limit := -3
+					mRed := 0.0
+					mGreen := 0.0
+					mBlue := 0.0
+					nValues := 0
 
-				for start > limit {
+					for start > limit {
 
-					for i := start; i < start*-1; i++ {
-						for j := start; j < start*-1; j++ {
-							if y+i >= 0 && y+i < len(img) && x+j >= 0 && x+j < len(img[0]) {
-								if labels[y+i][x+j] == 0 {
-									continue
-								}
-								rn, gn, bn := img[y+i][x+j][0], img[y+i][x+j][1], img[y+i][x+j][2]
-								mRed += float64(rn)
-								mGreen += float64(gn)
-								mBlue += float64(bn)
-								nValues++
-								if !(i == start || i == start*-1) && j != start*-1 {
-									j = start*-1 - 1
+						for i := start; i < start*-1; i++ {
+							for j := start; j < start*-1; j++ {
+								if y+i >= 0 && y+i < len(img) && x+j >= 0 && x+j < len(img[0]) {
+									if labels[y+i][x+j] == 0 {
+										continue
+									}
+									rn, gn, bn := img[y+i][x+j][0], img[y+i][x+j][1], img[y+i][x+j][2]
+									mRed += float64(rn)
+									mGreen += float64(gn)
+									mBlue += float64(bn)
+									nValues++
+									if !(i == start || i == start*-1) && j != start*-1 {
+										j = start*-1 - 1
+									}
 								}
 							}
 						}
+						start--
 					}
-					start--
+
+					mRed /= float64(nValues)
+					mGreen /= float64(nValues)
+					mBlue /= float64(nValues)
+
+					for i := reach / 2; i < reach; i++ {
+
+						if y-i >= 0 && labels[y-i][x] == 0 {
+							rn, gn, bn := int(img[y-i][x][0]), int(img[y-i][x][1]), int(img[y-i][x][2])
+
+							if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x, y-i, int(mRed), int(mGreen), int(mBlue)) {
+								labels[y-i][x] = 1
+								found++
+							}
+						}
+						if y+i < len(img) && labels[y+i][x] == 0 {
+							rn, gn, bn := int(img[y+i][x][0]), int(img[y+i][x][1]), int(img[y+i][x][2])
+
+							if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x, y+i, int(mRed), int(mGreen), int(mBlue)) {
+								labels[y+i][x] = 1
+								found++
+							}
+						}
+						if x-i >= 0 && labels[y][x-i] == 0 {
+							rn, gn, bn := int(img[y][x-i][0]), int(img[y][x-i][1]), int(img[y][x-i][2])
+
+							if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x-i, y, int(mRed), int(mGreen), int(mBlue)) {
+								labels[y][x-i] = 1
+								found++
+							}
+						}
+						if x+i < len(img[0]) && labels[y][x+i] == 0 {
+							rn, gn, bn := int(img[y][x+i][0]), int(img[y][x+i][1]), int(img[y][x+i][2])
+
+							if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x+i, y, int(mRed), int(mGreen), int(mBlue)) {
+								labels[y][x+i] = 1
+								found++
+							}
+						}
+
+					}
+
 				}
-
-				mRed /= float64(nValues)
-				mGreen /= float64(nValues)
-				mBlue /= float64(nValues)
-
-				for i := reach / 2; i < reach; i++ {
-
-					if y-i >= 0 && labels[y-i][x] == 0 {
-						rn, gn, bn := int(img[y-i][x][0]), int(img[y-i][x][1]), int(img[y-i][x][2])
-
-						if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x, y-i, int(mRed), int(mGreen), int(mBlue)) {
-							labels[y-i][x] = 1
-							found++
-						}
-					}
-					if y+i < len(img) && labels[y+i][x] == 0 {
-						rn, gn, bn := int(img[y+i][x][0]), int(img[y+i][x][1]), int(img[y+i][x][2])
-
-						if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x, y+i, int(mRed), int(mGreen), int(mBlue)) {
-							labels[y+i][x] = 1
-							found++
-						}
-					}
-					if x-i >= 0 && labels[y][x-i] == 0 {
-						rn, gn, bn := int(img[y][x-i][0]), int(img[y][x-i][1]), int(img[y][x-i][2])
-
-						if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x-i, y, int(mRed), int(mGreen), int(mBlue)) {
-							labels[y][x-i] = 1
-							found++
-						}
-					}
-					if x+i < len(img[0]) && labels[y][x+i] == 0 {
-						rn, gn, bn := int(img[y][x+i][0]), int(img[y][x+i][1]), int(img[y][x+i][2])
-
-						if utils.Similiarity(int(mRed), int(mGreen), int(mBlue), rn, gn, bn) >= threshold && checkNeighbors(img, x+i, y, int(mRed), int(mGreen), int(mBlue)) {
-							labels[y][x+i] = 1
-							found++
-						}
-					}
-
-				}
-
 			}
-		}(y)
+		}(proc)
+
 	}
+	// for y := 0; y < len(img); y += 1 {
+	// 	wg.Add(1)
+	// 	go func(y int) {
+	// 		defer wg.Done()
+
+	// 	}(y)
+	// }
 	wg.Wait()
 	fmt.Printf("Found %d pixels\n", found)
 	return found
