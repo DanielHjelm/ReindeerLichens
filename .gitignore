@@ -129,7 +129,7 @@ dmypy.json
 .pyre/
 
 
-images/*
+*images*
 */images/*
 masks/*
 */masks/*
@@ -138,3 +138,4 @@ result/*
 .DS_Store
 */.DS_Store
 */.ipynb_checkpoints/*
+node_modules
