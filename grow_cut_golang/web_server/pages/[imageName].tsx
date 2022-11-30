@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import _Image from "next/image";
 import axios from "axios";
-import NextScript from "next/script";
 import { getImageAndMask } from "../Utils/db";
 
 // Image to base64
@@ -111,8 +110,6 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 
   return (
     <div className={`relative w-[${imageSize.width}px]`}>
-      
-      <NextScript />
       <style jsx global>{`
         /* Other global styles such as 'html, body' etc... */
 
