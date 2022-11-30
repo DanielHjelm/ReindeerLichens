@@ -38,7 +38,7 @@ const Home = ({ paths }: { paths: string }) => {
         {endpoints.length > 0 &&
           endpoints.map((path: { fileName: string; hasMask: boolean }, index: number) => (
             <div className="flex flex-row items-end w-full justify-between  min-w-[50%]">
-              <Link className="" href={`/${path.fileName}`} key={path.fileName}>
+              <a className="" href={`/${path.fileName}`} key={path.fileName}>
                 {" "}
                 <div className="flex space-x-2 justify-center items-center">
                   {path.hasMask ? (
@@ -70,7 +70,7 @@ const Home = ({ paths }: { paths: string }) => {
                   )}
                   <p id={index.toString()}>{path.fileName}</p>
                 </div>
-              </Link>
+              </a>
               {path.hasMask && (
                 <a className="" href={`/masks/${path.fileName}`}>
                   To mask
