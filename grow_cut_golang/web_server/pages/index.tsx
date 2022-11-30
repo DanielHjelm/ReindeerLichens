@@ -11,6 +11,27 @@ const Home = ({ paths }: { paths: string }) => {
   let endpoints = JSON.parse(paths);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
+      <div className="flex flex-col items-center justify-center">
+        <h1 className="text-xl mb-2">Alla bilder som finns i databasen är länkade till nedan:</h1>
+        <div className="flex flex-col items-start mx-auto mb-10 text-xs">
+          <div className="flex items-center justify-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-green-700">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <p>Betyder att bilden har en sparad mask</p>
+          </div>
+          <div className="flex items-start justify-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-red-400">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+              />
+            </svg>
+            <p>Betyder att bilden inte har en sparad mask</p>
+          </div>
+        </div>
+      </div>
       <div className="flex flex-col justify-start items-start">
         <Head>Paths</Head>
         {endpoints.length == 0 && <h1>No Images Found</h1>}

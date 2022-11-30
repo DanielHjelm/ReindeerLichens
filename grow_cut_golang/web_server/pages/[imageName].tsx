@@ -111,6 +111,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 
   return (
     <div className={`relative w-[${imageSize.width}px]`}>
+      
       <NextScript />
       <style jsx global>{`
         /* Other global styles such as 'html, body' etc... */
