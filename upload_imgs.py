@@ -65,9 +65,7 @@ if __name__ == "__main__":
     host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 
     existingFiles = requests.get(f"http://{host}/images").json()["images"]
-    print(existingFiles)
     existingFiles = [f["filename"] for f in existingFiles]
-    print(existingFiles)
 
     if os.path.isfile(path):
         if os.path.basename(path) not in existingFiles:
