@@ -7,6 +7,8 @@ import os
 import time
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
+from datetime import datetime, timedelta
+
 
 def downloadFileFromDB(args):
 
@@ -73,7 +75,7 @@ def createFolders(outputFolders=["downloaded_images"]):
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-def downloadFromDB(request_url, outputFolder):
+def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
 
     '''Download images from database'''
 
@@ -87,6 +89,10 @@ def downloadFromDB(request_url, outputFolder):
     urls = []
     file_locations = []
     for file in filenames.json()["images"]:
+
+        # Check if the file was uploaded to database in the last 24 hours
+        if onlyLast24Hour and file["uploadDate"] < (datetime.now() - timedelta(hours = 24)).isoformat():
+            continue
 
         # Append url for image to list
         urls.append(request_url+'/'+file["filename"])
@@ -116,7 +122,7 @@ if __name__ == "__main__":
     outputFolder = "downloaded_images"
 
     # Download images from database
-    downloadFromDB(request_url, outputFolder)
+    downloadFromDB(request_url, outputFolder, onlyLast24Hour=False)
     
     # createFolders([outputFolder])
 
