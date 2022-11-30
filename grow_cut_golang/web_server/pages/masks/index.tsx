@@ -11,9 +11,9 @@ export default function Masks({ images }: { images: string[] }) {
       {images.length > 0 &&
         images.map((mask: any) => (
           <div key={mask} className="">
-            <Link href={`/masks/${mask}`}>
-              <h1 className="text-black">{mask}</h1>
-            </Link>
+            <a href={`/masks/${mask}`}>
+              <p>{mask}</p>
+            </a>
           </div>
         ))}
     </div>
