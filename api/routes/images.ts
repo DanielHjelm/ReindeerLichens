@@ -103,6 +103,7 @@ router.get("/", async (req, res, next) => {
             return {
               _id: file._id,
               filename: file.filename,
+              uploadDate: file.uploadDate,
             };
           }),
         });
