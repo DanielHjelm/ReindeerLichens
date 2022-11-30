@@ -31,10 +31,7 @@ conn.once("open", () => {
 // GridFS storage, called in post request
 const storage = new GridFsStorage({
   // URL
-  url:
-    "mongodb+srv://admin:" +
-    "hejhej" +
-    "@reindeerlichens.ro1gjeu.mongodb.net/?retryWrites=true&w=majority",
+  url: process.env.MONGO_DB ?? "mongodb://localhost:27017/grow-cut?readPreference=primary&appname=MongoDB%20Compass&ssl=false",
 
   // Options
   options: { useNewUrlParser: true, useUnifiedTopology: true },
@@ -58,15 +55,12 @@ const storage = new GridFsStorage({
             if (fileInDB.filename === file.originalname) {
               console.log("File already exists, old file will be overwritten");
               // Delete the file from the database
-              gridfsBucket.delete(
-                new mongoose.Types.ObjectId(fileInDB._id),
-                (err: any) => {
-                  console.log("File deleted");
-                  if (err) {
-                    console.log(err);
-                  }
+              gridfsBucket.delete(new mongoose.Types.ObjectId(fileInDB._id), (err: any) => {
+                console.log("File deleted");
+                if (err) {
+                  console.log(err);
                 }
-              );
+              });
             }
           });
         });
@@ -127,30 +121,27 @@ router.get("/", async (req, res, next) => {
 router.get("/:imageName", async (req, res) => {
   try {
     // Find file in database
-    await gfs.files.findOne(
-      { filename: req.params.imageName },
-      (err: any, file: any) => {
-        if (!file || file.length === 0) {
-          // File not found
-          return res.status(404).json({ err: "No File Exists" });
-        } else {
-          // File found, return file
-          const readStream = gridfsBucket.openDownloadStream(file._id);
+    await gfs.files.findOne({ filename: req.params.imageName }, (err: any, file: any) => {
+      if (!file || file.length === 0) {
+        // File not found
+        return res.status(404).json({ err: "No File Exists" });
+      } else {
+        // File found, return file
+        const readStream = gridfsBucket.openDownloadStream(file._id);
 
-          // Send BASE64 encoded image
-          let data = ''
-          readStream.on("data", (chunk: any) => {
-            data += chunk.toString('base64')
-          });
-          readStream.on("end", () => {
-            res.send(data)
-          });
+        // Send BASE64 encoded image
+        let data = "";
+        readStream.on("data", (chunk: any) => {
+          data += chunk.toString("base64");
+        });
+        readStream.on("end", () => {
+          res.send(data);
+        });
 
-          // Pipe file to response
-          // readStream.pipe(res);
-        }
+        // Pipe file to response
+        // readStream.pipe(res);
       }
-    );
+    });
   } catch (err) {
     res.status(500).json({ err: err });
   }
@@ -174,31 +165,23 @@ router.post("/", upload.single("file"), (req, res) => {
 router.delete("/:imageName", async (req, res, next) => {
   try {
     // Check if image exists
-    await gfs.files.findOne(
-      { filename: req.params.imageName },
-      (err: any, file: any) => {
-        if (!file || file.length === 0) {
-          return res
-            .status(404)
-            .json({ err: "No file with that name exists, please try again!" });
-        } else {
-          // Delete image
-          gridfsBucket.delete(
-            new mongoose.Types.ObjectId(file._id),
-            (err: any) => {
-              if (err) {
-                return res.status(500).json({ err: err });
-              } else {
-                res.status(200).json({
-                  message: "File successfully deleted from database",
-                  file: file,
-                });
-              }
-            }
-          );
-        }
+    await gfs.files.findOne({ filename: req.params.imageName }, (err: any, file: any) => {
+      if (!file || file.length === 0) {
+        return res.status(404).json({ err: "No file with that name exists, please try again!" });
+      } else {
+        // Delete image
+        gridfsBucket.delete(new mongoose.Types.ObjectId(file._id), (err: any) => {
+          if (err) {
+            return res.status(500).json({ err: err });
+          } else {
+            res.status(200).json({
+              message: "File successfully deleted from database",
+              file: file,
+            });
+          }
+        });
       }
-    );
+    });
     // Catch errors
   } catch (err) {
     res.status(500).json({ err: err });

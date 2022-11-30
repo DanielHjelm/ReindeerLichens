@@ -79,10 +79,10 @@ func base64ToArrayImage(b64 string) [][][]uint8 {
 func SaveResultToDb(path string) error {
 	// Send mask to database with a form
 	// https://stackoverflow.com/questions/20205796/post-data-using-the-content-type-multipart-form-data
-	apiHost := os.Getenv("IMAGES_API_HOST")
+	apiHost := os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 	if apiHost == "" {
-		fmt.Printf("IMAGES_API_HOST not set")
-		panic("IMAGES_API_HOST not set")
+		fmt.Printf("NEXT_PUBLIC_IMAGES_API_HOST not set")
+		panic("NEXT_PUBLIC_IMAGES_API_HOST not set")
 	}
 	fmt.Printf("apiHost: %v\n", apiHost)
 	file, err := os.Open(path)
@@ -147,7 +147,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("Some error occured. Err: %s", err)
 	}
+	if os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST") == "" {
+		log.Fatalf("NEXT_PUBLIC_IMAGES_API_HOST not set")
+	}
 
+	fmt.Printf("Images will be sent to %v\n", os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST"))
 	_, err = os.Stat("result")
 	if os.IsNotExist(err) {
 		os.Mkdir("result", 0755)
