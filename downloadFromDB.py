@@ -119,70 +119,8 @@ if __name__ == "__main__":
     # Url to the API
     request_url = "https://a916-130-243-234-224.eu.ngrok.io/images"
 
+    # Folder to save images
     outputFolder = "downloaded_images"
 
     # Download images from database
     downloadFromDB(request_url, outputFolder, onlyLast24Hour=False)
-    
-    # createFolders([outputFolder])
-
-    #     # Get filenames from server
-    # filenames = requests.get(url = filenames_URL)
-
-
-    # # print(filenames.json()["images"])
-
-    # urls = []
-    # file_locations = []
-    # for file in filenames.json()["images"]:
-    #     urls.append(filenames_URL+'/'+file["filename"])
-        
-    #     if file["filename"].rsplit('_', 1)[-1].split(".")[0] == "mask":
-    #         createFolders([outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]])
-    #         file_locations.append(outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]+"/"+file["filename"])
-    #     else:
-    #         createFolders([outputFolder + "/" + file["filename"].split(".")[0]])
-    #         file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
-
-
-    # inputs = zip(urls, file_locations)
-
-    # dowload_parallel(inputs)
-
-    # start_time = time.time()
-    # cpus = cpu_count()
-    # results = ThreadPool(cpus - 1).imap_unordered(downloadFromDB, inputs)
-
-    # for result in results:
-    #     print('url:', result[0], 'time (s):', result[1])
-
-
-
-    # # t0 = time.time()
-
-    # # Loop through filenames and download images
-    # for file in filenames.json()["images"]:
-
-    #     downloadFromDB(file)
-
-
-
-    # print("Total time:", time.time() - start_time)
-    
-   
-
-
-# print(os.path.splitext(file["filename"])[0])
-
-
-# file = requests.get(url = filenames_URL+'/'+file["filename"])
-
-# # print(file.content)
-
-# i = base64.b64decode(file.content)
-# i = io.BytesIO(i)
-# i = mpimg.imread(i, format='JPG')
-# mpimg.imsave('downloaded_images/{f}', i)
-
-# plt.imshow(i, interpolation='nearest')
-# plt.show()
