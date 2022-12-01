@@ -78,11 +78,11 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 
 		if assigned > 200 {
 			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
-			done = true
+			done = false
 
 		} else {
 			if assigned < 20 {
-				done = false
+				done = true
 				continue
 			}
 			if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
