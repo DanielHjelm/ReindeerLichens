@@ -17,7 +17,7 @@ import (
 )
 
 type Job struct {
-	ImageName    string
+	FileName     string
 	InitialState []map[string]int
 	ImageData    [][][]uint8
 }
@@ -30,8 +30,8 @@ func handleCellularGrowth(pipeline *[]Job) {
 			*pipeline = (*pipeline)[1:]
 			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false)
 			fmt.Printf("Cellular growth completed\n")
-			fileType := strings.Split(job.ImageName, ".")[1]
-			maskName := strings.Split(job.ImageName, ".")[0] + "_mask" + "." + fileType
+			fileType := strings.Split(job.FileName, ".")[1]
+			maskName := strings.Split(job.FileName, ".")[0] + "_mask" + "." + fileType
 			utils.SaveMask(mask, "result/"+maskName)
 			fmt.Printf("Mask saved\n")
 			utils.SaveResultToDb("result/" + maskName)
@@ -71,15 +71,7 @@ func main() {
 	}
 	go handleCellularGrowth(&pipeline)
 
-	busy := false
-
-	go http.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
-
-		if busy {
-			json.NewEncoder(w).Encode("busy")
-			return
-		}
-		busy = true
+	http.HandleFunc("/start", func(w http.ResponseWriter, r *http.Request) {
 
 		// fmt.Printf("Request: %v", r)
 
@@ -100,10 +92,11 @@ func main() {
 		}
 
 		job := Job{
-			ImageName:    r_body.FileName,
+			FileName:     r_body.FileName,
 			InitialState: r_body.Pixels,
 			ImageData:    img,
 		}
+		fmt.Printf("Job added to pipeline\n")
 		pipeline = append(pipeline, job)
 
 		// _image, err := utils.ReadImageAsArray("../images/" + r_body.ImageName)
@@ -122,8 +115,6 @@ func main() {
 		// if _, err := os.Stat("images/" + r_body.FileName); err != nil {
 
 		// }
-
-		busy = false
 
 	})
 

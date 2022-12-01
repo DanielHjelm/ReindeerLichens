@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"mime/multipart"
@@ -25,12 +26,40 @@ func escapeQuotes(s string) string {
 func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 
 	// Remove the header
-	header := strings.Split(b64, ",")[0]
+
 	b64 = strings.Split(b64, ",")[1]
-	unbased, _ := base64.StdEncoding.DecodeString(string(b64))
-	if strings.Contains(header, "png") {
+	unbased, err := base64.StdEncoding.DecodeString(b64)
+	if err != nil {
+		return nil, err
+	}
+
+	fileType := http.DetectContentType(unbased)
+	fmt.Printf("fileType: %v\n", fileType)
+	var mimeType string
+	if fileType == "image/jpeg" {
+		mimeType = ".jpg"
+	} else if fileType == "image/png" {
+		mimeType = ".png"
+	} else {
+		return nil, fmt.Errorf("Invalid file type: %v", fileType)
+	}
+
+	fmt.Printf("mimeType: %v\n", mimeType)
+	f, err := os.Create("temp" + mimeType)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+	if _, err := f.Write(unbased); err != nil {
+		return nil, err
+	}
+	if err := f.Sync(); err != nil {
+		return nil, err
+	}
+	f.Seek(0, 0)
+	if fileType == "image/png" {
 		// Decode base64 string
-		pngI, err := png.Decode(bytes.NewReader([]byte(unbased)))
+		pngI, err := png.Decode(f)
 		if err != nil {
 			fmt.Printf("Error decoding png: %v", err)
 			return nil, err
@@ -41,7 +70,7 @@ func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 
 	} else {
 
-		x, err := exif.Decode(bytes.NewReader([]byte(header)))
+		x, err := exif.Decode(f)
 		if err != nil {
 			fmt.Printf("Error decoding exif: %v", err)
 			return nil, err
@@ -54,19 +83,23 @@ func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 			return nil, err
 
 		}
+		f.Seek(0, 0)
 
 		// Decode base64 string
-		pngI, err := png.Decode(bytes.NewReader([]byte(unbased)))
+		jpgI, err := jpeg.Decode(f)
 		if err != nil {
-			fmt.Printf("Error decoding png: %v", err)
+			fmt.Printf("Error decoding jpeg: %v", err)
 			return nil, err
 
 		}
-		image := ImageToArray(pngI)
+		image := ImageToArray(jpgI)
+
 		// Rotate the image
-		if orientation.String() != "0" {
+		if orientation.String() != "1" {
 			image = RotateImage(image, 90*3)
 		}
+
+		os.Remove(f.Name())
 		return image, nil
 
 	}

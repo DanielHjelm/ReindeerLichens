@@ -202,7 +202,7 @@ export async function getStaticPaths() {
 
   if (res.status !== 200) {
     return {
-      notFound: true,
+      paths: [],
     };
   }
 
