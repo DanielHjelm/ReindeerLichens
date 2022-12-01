@@ -23,7 +23,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		labels[y][x] = 1
 	}
 
-	// utils.SaveMask(labels, "initial_mask.jpg")
+	utils.SaveMask(labels, "initial_mask.jpg")
 
 	labels_next := utils.CreateArrayInt(len(img), len(img[0]))
 
@@ -78,7 +78,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 
 		if assigned > 200 {
 			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
-			done = false
+			done = true
 
 		} else {
 			if assigned < 20 {
