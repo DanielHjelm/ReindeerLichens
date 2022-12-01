@@ -60,6 +60,29 @@ func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 
 }
 
+func GetInProgessStatus(filename string) bool {
+	apiHost := os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST")
+	if apiHost == "" {
+		fmt.Printf("NEXT_PUBLIC_IMAGES_API_HOST not set")
+		return false
+	}
+	endpoint := "http://" + apiHost + "/setInProgress"
+	resp, err := http.Get(endpoint + "/" + filename)
+	if err != nil {
+		return false
+	}
+	var res map[string]interface{}
+
+	json.NewDecoder(resp.Body).Decode(&res)
+
+	fmt.Println(res)
+	if res["inProgress"] != nil {
+
+		return res["inProgress"].(bool)
+	}
+	return false
+}
+
 func SendInProgessStatus(fileName string, status bool) error {
 	apiHost := os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 	if apiHost == "" {

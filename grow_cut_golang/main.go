@@ -29,6 +29,10 @@ func handleCellularGrowth(pipeline *[]Job) {
 
 			job := (*pipeline)[0]
 			*pipeline = (*pipeline)[1:]
+			if utils.GetInProgessStatus(job.FileName) {
+				fmt.Printf("Job %v is already in progress\n", job.FileName)
+				continue
+			}
 			utils.SendInProgessStatus(job.FileName, true)
 			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false)
 			fmt.Printf("Cellular growth completed\n")
@@ -104,8 +108,6 @@ func main() {
 		fmt.Printf("Job added to pipeline\n")
 		pipeline = append(pipeline, job)
 
-
-		
 		fmt.Fprintf(w, "Job added to pipeline")
 		w.WriteHeader(http.StatusOK)
 		return
