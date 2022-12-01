@@ -83,13 +83,15 @@ func main() {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
-		img, err := utils.Base64ToArrayImage(r_body.Img)
+		// img, err := utils.Base64ToArrayImage(r_body.Img)
 		if err != nil {
 			// Print error
 			fmt.Printf("%v\n", err)
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		img, err := utils.ReadImageAsArray("temp.jpg")
 
 		job := Job{
 			FileName:     r_body.FileName,

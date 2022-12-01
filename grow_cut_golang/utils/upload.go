@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"image/jpeg"
-	"image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -13,8 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	exif "github.com/rwcarlsen/goexif/exif"
 )
 
 var quoteEscaper = strings.NewReplacer("\\", "\\\\", `"`, "\\\"")
@@ -57,52 +53,9 @@ func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 		return nil, err
 	}
 	f.Seek(0, 0)
-	if fileType == "image/png" {
-		// Decode base64 string
-		pngI, err := png.Decode(f)
-		if err != nil {
-			fmt.Printf("Error decoding png: %v", err)
-			return nil, err
-
-		}
-		image := ImageToArray(pngI)
-		return image, nil
-
-	} else {
-
-		x, err := exif.Decode(f)
-		if err != nil {
-			fmt.Printf("Error decoding exif: %v", err)
-			return nil, err
-
-		}
-		// Get the image orientation
-		orientation, err := x.Get("Orientation")
-		if err != nil {
-			fmt.Printf("Error getting orientation: %v", err)
-			return nil, err
-
-		}
-		f.Seek(0, 0)
-
-		// Decode base64 string
-		jpgI, err := jpeg.Decode(f)
-		if err != nil {
-			fmt.Printf("Error decoding jpeg: %v", err)
-			return nil, err
-
-		}
-		image := ImageToArray(jpgI)
-
-		// Rotate the image
-		if orientation.String() != "1" {
-			image = RotateImage(image, 90*3)
-		}
-
-		os.Remove(f.Name())
-		return image, nil
-
-	}
+	img, err := ReadImageAsArray(f.Name())
+	os.Remove(f.Name())
+	return img, nil
 
 }
 
