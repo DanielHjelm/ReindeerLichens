@@ -24,7 +24,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [lineColor, setLineColor] = useState("red");
   const [lineOpacity, setLineOpacity] = useState(100);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  let [endPoint, setEndPoint] = React.useState("192.168.0.113:3001/start");
+  let [endPoint, setEndPoint] = React.useState("localhost:3001/start");
   let [pixels, setPixels] = React.useState<{ x: number; y: number }[]>([]);
 
   async function sendRequest() {
