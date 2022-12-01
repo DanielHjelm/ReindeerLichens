@@ -72,7 +72,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       ctxRef.current.lineCap = "round";
       ctxRef.current.strokeStyle = "black";
       msk.onload = () => {
-        ctx.globalAlpha = 0.5;
         ctx.drawImage(msk, 0, 0);
         const imageData = ctx.getImageData(0, 0, msk.width, msk.height);
         let mask = removeBackground(imageData);
@@ -88,12 +87,17 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     const msk = new Image();
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-
+    let addBtn = document.getElementById("add-btn")!;
+    addBtn.innerText = "Add";
+    addBtn.style.backgroundColor = "white";
+    addBtn.style.color = "#61A5FB";
+    addBtn.style.borderColor = "#61A5FB";
     msk.src = mask;
     ctxRef.current!.lineWidth = lineWidth;
     ctxRef.current!.lineCap = "round";
     ctxRef.current!.strokeStyle = "black";
     msk.onload = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(msk, 0, 0);
       const imageData = ctx.getImageData(0, 0, msk.width, msk.height);
       let mask = removeBackground(imageData);
@@ -102,6 +106,57 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       setMaskLoaded(true);
       setMaskSize({ width: msk.width, height: msk.height });
     };
+  }
+
+  async function HandleAddToMask() {
+    let addBtn = document.getElementById("add-btn")!;
+    if (addBtn.innerText === "Send") {
+      let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+      let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+      let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      let pixelData = [];
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        if (imageData.data[i + 3] !== 0) {
+          let x = (i / 4) % canvas.width;
+          let y = Math.floor(i / 4 / canvas.width);
+
+          pixelData.push({ x: x, y: y });
+        }
+      }
+      let data = {
+        fileName: fileName,
+        pixels: pixelData,
+        img: image,
+      };
+      try {
+        let response = await fetch(`http://${process.env.NEXT_PUBLIC_GOLANG_HOST}/start`, {
+          method: "POST",
+          mode: "no-cors",
+
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+          },
+          body: JSON.stringify(data),
+        });
+        console.log(response);
+        setTimeout(() => {
+          window.location.replace("/");
+        }, 2000);
+
+        return;
+      } catch {
+        alert(
+          `Error sending request, have you set the golang host property correctly in .env.local?\nYou are currently using ${process.env.NEXT_PUBLIC_GOLANG_HOST}`
+        );
+      }
+    }
+    addBtn.innerText = "Send";
+    addBtn.style.backgroundColor = "#4ADE80";
+    addBtn.style.color = "white";
+    ctxRef.current!.lineWidth = 3;
+    addBtn.style.borderColor = "#ffffff";
+    ctxRef.current!.strokeStyle = "red";
   }
 
   // Function for starting the drawing
@@ -262,6 +317,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         </div>
         <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer" onClick={resetCanvas}>
           Reset
+        </div>
+        <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer" onClick={HandleAddToMask}>
+          Add
         </div>
       </div>
       <div id="line-width-indicator" className="absolute rounded-full"></div>

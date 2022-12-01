@@ -7,7 +7,6 @@ import Link from "next/link";
 import imageName from "./[imageName]";
 
 const Home = ({ paths }: { paths: string }) => {
-  console.log({ paths });
   let endpoints = JSON.parse(paths);
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
@@ -48,8 +47,8 @@ const Home = ({ paths }: { paths: string }) => {
         {endpoints.length == 0 && <h1>No Images Found</h1>}
         {endpoints.length > 0 &&
           endpoints.map((path: { fileName: string; hasMask: boolean; inProgress: boolean }, index: number) => (
-            <div className="flex flex-row items-end w-full justify-between  min-w-[50%]">
-              <a className="" href={`/${path.fileName}`} key={path.fileName}>
+            <div key={path.fileName} className="flex flex-row items-end w-full justify-between  min-w-[50%]">
+              <a className="" href={`/${path.fileName}`}>
                 {" "}
                 <div className="flex space-x-2 justify-center items-center">
                   {path.inProgress ? (

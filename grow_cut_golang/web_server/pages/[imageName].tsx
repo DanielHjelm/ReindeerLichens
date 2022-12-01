@@ -24,7 +24,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [lineColor, setLineColor] = useState("red");
   const [lineOpacity, setLineOpacity] = useState(100);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  let [endPoint, setEndPoint] = React.useState("localhost:3001/start");
+  let [endPoint, setEndPoint] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
   let [pixels, setPixels] = React.useState<{ x: number; y: number }[]>([]);
 
   async function sendRequest() {
@@ -130,7 +130,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     switch (requestStatus) {
       case "ok":
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-green-700">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-white">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         );
