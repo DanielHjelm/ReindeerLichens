@@ -7,6 +7,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [maskSize, setMaskSize] = React.useState({ width: 0, height: 0 });
   let [lineWidth, setLineWidth] = React.useState(20);
   let [requestStatus, setRequestStatus] = React.useState("idle");
+  let [updateRequestStatus, setUpdateRequestStatus] = React.useState("idle");
+
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
@@ -88,7 +90,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let addBtn = document.getElementById("add-btn")!;
-    addBtn.innerText = "Add";
+    let addText = document.getElementById("add-text")!;
+    addText.innerText = "Add";
     addBtn.style.backgroundColor = "white";
     addBtn.style.color = "#61A5FB";
     addBtn.style.borderColor = "#61A5FB";
@@ -111,6 +114,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   async function HandleAddToMask() {
     let addBtn = document.getElementById("add-btn")!;
     if (addBtn.innerText === "Send") {
+      if (updateRequestStatus !== "idle") {
+        return;
+      }
       let canvas = document.getElementById("canvas") as HTMLCanvasElement;
       let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -129,6 +135,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         img: image,
       };
       try {
+        setUpdateRequestStatus("pending");
         let response = await fetch(`http://${process.env.NEXT_PUBLIC_GOLANG_HOST}/start`, {
           method: "POST",
           mode: "no-cors",
@@ -140,10 +147,15 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           body: JSON.stringify(data),
         });
         console.log(response);
+        if (response.status === 200 || response.status === 0) {
+          setUpdateRequestStatus("ok");
+          setTimeout(() => {
+            window.location.replace("/");
+          }, 2000);
+        }
         setTimeout(() => {
-          window.location.replace("/");
-        }, 2000);
-
+          setUpdateRequestStatus("idle");
+        }, 4000);
         return;
       } catch {
         alert(
@@ -151,7 +163,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         );
       }
     }
-    addBtn.innerText = "Send";
+    let addText = document.getElementById("add-text")!;
+    addText.innerText = "Send";
     addBtn.style.backgroundColor = "#4ADE80";
     addBtn.style.color = "white";
     ctxRef.current!.lineWidth = 3;
@@ -214,7 +227,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
-    setRequestStatus("loading");
+    setRequestStatus("pending");
 
     let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
@@ -227,8 +240,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     }, 5000);
     console.log(res);
   }
-  function getRequestStatusSymbol() {
-    switch (requestStatus) {
+  function getRequestStatusSymbol(status: string) {
+    switch (status) {
       case "ok":
         return (
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-white">
@@ -236,7 +249,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           </svg>
         );
         break;
-      case "loading":
+      case "pending":
         return (
           <svg
             aria-hidden="false"
@@ -313,13 +326,14 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           />
         </div>
         <div className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
-          {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol()}</div>}
+          {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
         </div>
         <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer" onClick={resetCanvas}>
           Reset
         </div>
+
         <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer" onClick={HandleAddToMask}>
-          Add
+          {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
         </div>
       </div>
       <div id="line-width-indicator" className="absolute rounded-full"></div>

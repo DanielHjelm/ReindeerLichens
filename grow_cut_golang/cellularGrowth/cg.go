@@ -81,6 +81,9 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 			done = false
 
 		} else {
+			if assigned < 20 {
+
+			}
 			if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
 				fmt.Printf("Restarting growth, %d distant neighbors found\n", distantNeighbors)
 				done = false
@@ -132,7 +135,7 @@ func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y 
 	nValues := 0
 	start := -1
 	limit := -4
-	threshold := 0.99994
+	threshold := 0.9999  // Feel free to change this
 	// fmt.Printf("Checking pixel %d, %d\n", y, x)
 	rMean, gMean, bMean := 0.0, 0.0, 0.0
 

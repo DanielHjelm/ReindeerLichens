@@ -5,6 +5,14 @@ import axios from "axios";
 
 import Link from "next/link";
 import imageName from "./[imageName]";
+import { stringify } from "querystring";
+
+interface Data {
+  fileName: string;
+  hasMask: boolean;
+  inProgress: boolean;
+  uploadDate: string;
+}
 
 const Home = ({ paths }: { paths: string }) => {
   let endpoints = JSON.parse(paths);
@@ -46,63 +54,67 @@ const Home = ({ paths }: { paths: string }) => {
         <Head>Paths</Head>
         {endpoints.length == 0 && <h1>No Images Found</h1>}
         {endpoints.length > 0 &&
-          endpoints.map((path: { fileName: string; hasMask: boolean; inProgress: boolean }, index: number) => (
-            <div key={path.fileName} className="flex flex-row items-end w-full justify-between  min-w-[50%]">
-              <a className="" href={`/${path.fileName}`}>
-                {" "}
-                <div className="flex space-x-2 justify-center items-center">
-                  {path.inProgress ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 text-yellow-500"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
-                      />
-                    </svg>
-                  ) : path.hasMask ? (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 text-green-700"
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="w-4 h-4 text-red-400"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
-                      />
-                    </svg>
-                  )}
-                  <p id={index.toString()}>{path.fileName}</p>
-                </div>
-              </a>
-              {path.hasMask && (
-                <a className="" href={`/masks/${path.fileName}`}>
-                  To mask
+          endpoints
+            .sort((a: Data, b: Data) => {
+              return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
+            })
+            .map((path: { fileName: string; hasMask: boolean; inProgress: boolean; uploadDate: string }, index: number) => (
+              <div key={path.fileName} title={path.uploadDate} className="flex flex-row items-end w-full justify-between  min-w-[50%]">
+                <a className="" href={`/${path.fileName}`}>
+                  {" "}
+                  <div className="flex space-x-2 justify-center items-center">
+                    {path.inProgress ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4 text-yellow-500"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99"
+                        />
+                      </svg>
+                    ) : path.hasMask ? (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4 text-green-700"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                      </svg>
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth={1.5}
+                        stroke="currentColor"
+                        className="w-4 h-4 text-red-400"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+                        />
+                      </svg>
+                    )}
+                    <p id={index.toString()}>{path.fileName}</p>
+                  </div>
                 </a>
-              )}
-            </div>
-          ))}
+                {path.hasMask && (
+                  <a className="" href={`/masks/${path.fileName}`}>
+                    To mask
+                  </a>
+                )}
+              </div>
+            ))}
       </div>
     </div>
   );
@@ -133,8 +145,8 @@ export async function getServerSideProps() {
     console.log({ image });
     let mask = masks.find((mask: string) => mask.includes(image.split(".")[0]));
     let inProgress = res.data["images"].find((item: any) => item.filename == image)["inProgress"] as boolean;
-
-    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress };
+    let uploadDate = res.data["images"].find((item: any) => item.filename == image)["uploadDate"] as string;
+    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress, uploadDate: uploadDate };
   }
 
   console.log({ images: images });
