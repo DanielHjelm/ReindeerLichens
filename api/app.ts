@@ -1,6 +1,7 @@
 // Imports
 import express from "express";
 import router from "./routes/images";
+import inProgressRouter from "./routes/inProgress";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
@@ -18,10 +19,7 @@ app.use(bodyParser.json());
 // Handle CORS errors
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
 
   if (req.method === "OPTIONS") {
     res.header("Access-Control-Allow-Methods", "PUT, POST, PATCH, DELETE, GET");
@@ -30,9 +28,9 @@ app.use((req, res, next) => {
   next();
 });
 
-
 // Route
 app.use("/images", router);
+app.use("/setInProgress", inProgressRouter);
 
 app.use((req, res, next) => {
   const error = new CustomError(404, "Not found");
@@ -40,18 +38,11 @@ app.use((req, res, next) => {
 });
 
 // Error handling
-app.use(
-  (
-    error: Error,
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) => {
-    res.status(500).json({
-      message: error.message,
-    });
-  }
-);
+app.use((error: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  res.status(500).json({
+    message: error.message,
+  });
+});
 
 export default app;
 
@@ -72,5 +63,3 @@ export class CustomError extends Error {
     return "Something went wrong: " + this.message;
   }
 }
-
-

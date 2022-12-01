@@ -1,7 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import dotenv from 'dotenv';
 import app from './app';
-const dbConnection = require('./db');
+import dbConnection from "./db";
 
 
 dotenv.config();

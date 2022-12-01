@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -59,6 +60,39 @@ func Base64ToArrayImage(b64 string) ([][][]uint8, error) {
 
 }
 
+func SendInProgessStatus(fileName string, status bool) error {
+	apiHost := os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST")
+	if apiHost == "" {
+		fmt.Printf("NEXT_PUBLIC_IMAGES_API_HOST not set")
+		return fmt.Errorf("NEXT_PUBLIC_IMAGES_API_HOST not set")
+	}
+
+	endpoint := "http://" + apiHost + "/setInProgress"
+
+	values := map[string]string{"fileName": fileName, "status": fmt.Sprintf("%v", status)}
+	json_data, err := json.Marshal(values)
+	fmt.Printf("Sending request with %v\n", values)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(endpoint, "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		return err
+	}
+
+	var res map[string]interface{}
+
+	json.NewDecoder(resp.Body).Decode(&res)
+
+	fmt.Println(res)
+	return nil
+
+}
+
 func SaveResultToDb(path string) error {
 	// Send mask to database with a form
 	// https://stackoverflow.com/questions/20205796/post-data-using-the-content-type-multipart-form-data
@@ -102,23 +136,26 @@ func SaveResultToDb(path string) error {
 	req, err := http.NewRequest("POST", endpoint, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
-	fmt.Printf("Request headers\n")
-	for name, values := range req.Header {
-		// Loop over all values for the name.
-		for _, value := range values {
-			fmt.Println(name, value)
-		}
-	}
-	fmt.Printf("req: %v\n", req.Header)
+	// fmt.Printf("Request headers\n")
+	// for name, values := range req.Header {
+	// 	// Loop over all values for the name.
+	// 	for _, value := range values {
+	// 		fmt.Println(name, value)
+	// 	}
+	// }
+	// fmt.Printf("req: %v\n", req.Header)
 
 	client := &http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("Response status code: %v\n", res.StatusCode)
-	fmt.Println("res header: %w\n", res.Header)
-	fmt.Println("Response body: %w\n", res.Body)
+	// fmt.Printf("Response status code: %v\n", res.StatusCode)
+	if res.StatusCode != 200 {
+		return fmt.Errorf("Error saving result to database")
+	}
+	// fmt.Println("res header: %w\n", res.Header)
+	// fmt.Println("Response body: %w\n", res.Body)
 
 	return nil
 

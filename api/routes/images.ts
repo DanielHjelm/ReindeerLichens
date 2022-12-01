@@ -14,11 +14,16 @@ import { GridFsStorage } from "multer-gridfs-storage";
 // import Image from "../models/images";
 
 // GridFS
-const Grid = require("gridfs-stream");
-let gfs: any, gridfsBucket: any;
+// const Grid = require("gridfs-stream");
+import Grid from "gridfs-stream";
+import mongo, { MongoClient } from "mongodb";
+let gfs: Grid.Grid, gridfsBucket: any;
+import dotenv from "dotenv";
+dotenv.config();
 
 // Mongoose connection
 const conn = mongoose.connection;
+// Connect to MongoDB
 conn.once("open", () => {
   gridfsBucket = new mongoose.mongo.GridFSBucket(conn.db, {
     bucketName: "images",
@@ -28,10 +33,11 @@ conn.once("open", () => {
   gfs.collection("images");
 });
 
+console.log(`Conencting to storage server at ${process.env.MONGO_DB}`);
 // GridFS storage, called in post request
 const storage = new GridFsStorage({
   // URL
-  url: process.env.MONGO_DB ?? "mongodb://localhost:27017/grow-cut?readPreference=primary&appname=MongoDB%20Compass&ssl=false",
+  url: process.env.MONGO_DB!,
 
   // Options
   options: { useNewUrlParser: true, useUnifiedTopology: true },
@@ -41,12 +47,11 @@ const storage = new GridFsStorage({
     const match = ["image/png", "image/jpeg"];
 
     if (match.indexOf(file.mimetype) === -1) {
-      const filename = `${file.originalname}`;
-      return filename;
+      return undefined;
     }
     // Loop through the files
     try {
-      await gfs
+      gfs
         .collection("images")
         .find()
         .toArray((err: any, files: any) => {
@@ -91,7 +96,7 @@ router.get("/", async (req, res, next) => {
     await gridfsBucket.find().toArray((err: any, files: any) => {
       // Check if files exists
       if (!files || files.length === 0) {
-        return res.status(404).json({
+        return res.status(204).json({
           err: "No files exist",
         });
       } else {
@@ -104,6 +109,7 @@ router.get("/", async (req, res, next) => {
               _id: file._id,
               filename: file.filename,
               uploadDate: file.uploadDate,
+              inProgress: file.inProgress ?? false,
             };
           }),
         });
@@ -125,7 +131,7 @@ router.get("/:imageName", async (req, res) => {
     await gfs.files.findOne({ filename: req.params.imageName }, (err: any, file: any) => {
       if (!file || file.length === 0) {
         // File not found
-        return res.status(404).json({ err: "No File Exists" });
+        return res.status(204).json({ err: "No File Exists" });
       } else {
         // File found, return file
         const readStream = gridfsBucket.openDownloadStream(file._id);
@@ -168,7 +174,7 @@ router.delete("/:imageName", async (req, res, next) => {
     // Check if image exists
     await gfs.files.findOne({ filename: req.params.imageName }, (err: any, file: any) => {
       if (!file || file.length === 0) {
-        return res.status(404).json({ err: "No file with that name exists, please try again!" });
+        return res.status(204).json({ err: "No file with that name exists, please try again!" });
       } else {
         // Delete image
         gridfsBucket.delete(new mongoose.Types.ObjectId(file._id), (err: any) => {

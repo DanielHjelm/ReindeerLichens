@@ -26,8 +26,10 @@ func handleCellularGrowth(pipeline *[]Job) {
 
 	for true {
 		if len(*pipeline) > 0 {
+
 			job := (*pipeline)[0]
 			*pipeline = (*pipeline)[1:]
+			utils.SendInProgessStatus(job.FileName, true)
 			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false)
 			fmt.Printf("Cellular growth completed\n")
 			fileType := strings.Split(job.FileName, ".")[1]
@@ -35,6 +37,7 @@ func handleCellularGrowth(pipeline *[]Job) {
 			utils.SaveMask(mask, "result/"+maskName)
 			fmt.Printf("Mask saved\n")
 			utils.SaveResultToDb("result/" + maskName)
+			utils.SendInProgessStatus(job.FileName, false)
 			fmt.Printf("Mask saved to mongo\n")
 		}
 		time.Sleep(2 * time.Second)
@@ -101,23 +104,11 @@ func main() {
 		fmt.Printf("Job added to pipeline\n")
 		pipeline = append(pipeline, job)
 
-		// _image, err := utils.ReadImageAsArray("../images/" + r_body.ImageName)
-		// if err != nil {
-		// 	fmt.Printf("Error opening image: %v", err)
-		// 	panic(err)
-		// }
 
-		// mask := cellulargrowth.CellularGrowth(img, r_body.Pixels, false)
-		// fmt.Printf("Cellular growth completed\n")
-		// fileType := strings.Split(r_body.FileName, ".")[1]
-		// maskName := strings.Split(r_body.FileName, ".")[0] + "_mask" + "." + fileType
-		// utils.SaveMask(mask, "result/"+maskName)
-
-		// Save image locally
-		// if _, err := os.Stat("images/" + r_body.FileName); err != nil {
-
-		// }
-
+		
+		fmt.Fprintf(w, "Job added to pipeline")
+		w.WriteHeader(http.StatusOK)
+		return
 	})
 
 	port := ":3001"
