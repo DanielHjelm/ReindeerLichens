@@ -117,7 +117,7 @@ def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
 if __name__ == "__main__":
 
     # Url to the API
-    request_url = "https://a916-130-243-234-224.eu.ngrok.io/images"
+    request_url = "https://125a-82-209-142-153.eu.ngrok.io/images"
 
     # Folder to save images
     outputFolder = "downloaded_images"

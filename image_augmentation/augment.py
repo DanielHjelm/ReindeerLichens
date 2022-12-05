@@ -1,6 +1,8 @@
 import imageio.v2 as imageio
 import imgaug
 import matplotlib.pyplot as plt
+import os
+import time
 
 class ImageAugmenter:
     """
@@ -85,20 +87,59 @@ def contrast_image(image, mask, type_of_contrast):
 
     return image_contrast, mask
 
+def augment_images(path_to_folder):
+
+    """Augment images and masks in path_to_folder. A ImageAugmenter object is created for each image and mask."""
+
+    for folder in os.listdir(path_to_folder):
+        if folder != ".DS_Store":
+            for image in os.listdir(os.path.join(path_to_folder, folder)):
+                if "mask" in image:
+                    mask_path = os.path.join(path_to_folder, folder, image)
+                else:
+                     image_path = os.path.join(path_to_folder, folder, image)
+
+            # Read image and masks
+            image = imageio.imread(image_path)
+            mask = imageio.imread(mask_path)
+
+            # Create ImageAugmenter object
+            image_augmenter = ImageAugmenter(image, mask)
+
+            # Crerate generator with 8 different rotated images and their mask
+            gen = image_augmenter.return_augmented_images()
+
+            # Example on how you access the images and masks. They are stored as (image, mask) tuples in the generator.
+            # for i, (image, mask) in enumerate(gen):
+            #     plt.subplot(1, 2, 1)
+            #     plt.imshow(image)
+            #     plt.subplot(1, 2, 2)
+            #     plt.imshow(mask)
+            #     plt.show()
+
+
+
 
 if __name__ == '__main__':
-    image = imageio.imread('images/01.png')
-    mask = imageio.imread('masks/01_mask.png')
 
-    image_augmenter = ImageAugmenter(image, mask)
-    gen = image_augmenter.return_augmented_images()
+    path_to_folder = '/Users/daniel/Desktop/downloaded_images'
+    start = time.time()
+    augment_images(path_to_folder)
+    end = time.time()
+    print(end - start)
+
+    # image = imageio.imread('images/01.png')
+    # mask = imageio.imread('masks/01_mask.png')
+
+    # image_augmenter = ImageAugmenter(image, mask)
+    # gen = image_augmenter.return_augmented_images()
     
-    for i, (image, mask) in enumerate(gen):
-        plt.subplot(1, 2, 1)
-        plt.imshow(image)
-        plt.subplot(1, 2, 2)
-        plt.imshow(mask)
-        plt.show()
+    # for i, (image, mask) in enumerate(gen):
+    #     plt.subplot(1, 2, 1)
+    #     plt.imshow(image)
+    #     plt.subplot(1, 2, 2)
+    #     plt.imshow(mask)
+    #     plt.show()
 
     
     # image_augmenter.rotate(90)
