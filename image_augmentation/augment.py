@@ -122,35 +122,9 @@ def augment_images(path_to_folder):
 
 if __name__ == '__main__':
 
+    # Path to folder with images and masks
     path_to_folder = '/Users/daniel/Desktop/downloaded_images'
-    start = time.time()
+
+    # Augment images and masks
     augment_images(path_to_folder)
-    end = time.time()
-    print(end - start)
-
-    # image = imageio.imread('images/01.png')
-    # mask = imageio.imread('masks/01_mask.png')
-
-    # image_augmenter = ImageAugmenter(image, mask)
-    # gen = image_augmenter.return_augmented_images()
-    
-    # for i, (image, mask) in enumerate(gen):
-    #     plt.subplot(1, 2, 1)
-    #     plt.imshow(image)
-    #     plt.subplot(1, 2, 2)
-    #     plt.imshow(mask)
-    #     plt.show()
-
-    
-    # image_augmenter.rotate(90)
-    # image_augmenter.flip('horizontal')
-    # image_augmenter.contrast('Gamma')
-    # image_augmenter.show()
-    # image_rot, mask_rot = contrast_image(image, mask, 'Linear')
-    # plt.subplot(1,2,1)
-    # plt.title('Original image')
-    # plt.imshow(image)
-    # plt.subplot(1, 2, 2)
-    # plt.title('Augmented image')
-    # plt.imshow(image_rot)
-    # plt.show()
+  
