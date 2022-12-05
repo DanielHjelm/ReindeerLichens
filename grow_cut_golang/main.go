@@ -20,6 +20,7 @@ type Job struct {
 	FileName     string
 	InitialState []map[string]int
 	ImageData    [][][]uint8
+	AllowJumps   bool
 }
 
 func handleCellularGrowth(pipeline *[]Job) {
@@ -33,8 +34,11 @@ func handleCellularGrowth(pipeline *[]Job) {
 				fmt.Printf("Job %v is already in progress\n", job.FileName)
 				continue
 			}
+			if !job.AllowJumps {
+				fmt.Printf("Job %v is not allowed to jump\n", job.FileName)
+			}
 			utils.SendInProgessStatus(job.FileName, true)
-			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false)
+			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false, job.AllowJumps)
 			fmt.Printf("Cellular growth completed\n")
 			fileType := strings.Split(job.FileName, ".")[1]
 			maskName := strings.Split(job.FileName, ".")[0] + "_mask" + "." + fileType
@@ -72,9 +76,10 @@ func main() {
 	}
 
 	type RequestBody struct {
-		Pixels   []map[string]int `json:"pixels"`
-		FileName string           `json:"fileName"`
-		Img      string           `json:"img"`
+		Pixels     []map[string]int `json:"pixels"`
+		FileName   string           `json:"fileName"`
+		Img        string           `json:"img"`
+		AllowJumps bool             `json:"allowJumps"`
 	}
 	go handleCellularGrowth(&pipeline)
 
@@ -104,6 +109,7 @@ func main() {
 			FileName:     r_body.FileName,
 			InitialState: r_body.Pixels,
 			ImageData:    img,
+			AllowJumps:   r_body.AllowJumps,
 		}
 		fmt.Printf("Job added to pipeline\n")
 		pipeline = append(pipeline, job)

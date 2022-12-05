@@ -11,6 +11,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [starRequstStatus, setStarRequestStatus] = React.useState("idle");
   let [showMask, setShowMask] = React.useState(true);
   let [starred, setStarred] = React.useState(false);
+  let [allowJump, setAllowJump] = React.useState(true);
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
@@ -77,6 +78,16 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     resetCanvas();
   }
 
+  function notifyIsViewed() {
+    axios.post(`http://localhost:3000/api/isViewed`, {
+      method: "POST",
+      headers: {
+        "Allow-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ fileName, isViwewd: true }),
+    });
+  }
+
   useEffect(() => {
     getStarStatus();
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
@@ -113,13 +124,21 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         setMaskSize({ width: msk.width, height: msk.height });
       };
     }
+    axios.post("/api/hello");
+
+    return () => {
+      axios.post("/api/hello");
+    };
   }, []);
 
   function resetCanvas() {
     const msk = new Image();
+
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let addBtn = document.getElementById("add-btn")!;
+    let allowJumpSwitch = document.getElementById("allow-jump-switch") as HTMLInputElement;
+    if (allowJumpSwitch) allowJumpSwitch.hidden = true;
     let addText = document.getElementById("add-text")!;
     addText.innerText = "Add";
     addBtn.style.backgroundColor = "white";
@@ -143,6 +162,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
   async function HandleAddToMask() {
     let addBtn = document.getElementById("add-btn")!;
+    let allowJumpSwitch = document.getElementById("allow-jump-switch") as HTMLInputElement;
+    allowJumpSwitch.hidden = false;
     if (addBtn.innerText === "Send") {
       if (updateRequestStatus !== "idle") {
         return;
@@ -164,6 +185,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         fileName: fileName,
         pixels: pixelData,
         img: image,
+        allowJump: allowJump,
       };
       try {
         setUpdateRequestStatus("pending");
@@ -372,7 +394,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           <label className="inline-flex relative items-center cursor-pointer">
             <input type="checkbox" value="" className="sr-only peer" onClick={() => setShowMask((prev) => !prev)} />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Hide mask</span>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Hide mask</span>
           </label>
         </div>
 
@@ -401,6 +423,21 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
             </div>
             <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
               Reset
+            </div>
+            <div id="allow-jump-switch" hidden={true}>
+              <label className="inline-flex relative items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  defaultChecked={allowJump}
+                  onClick={() => {
+                    setAllowJump((prev) => !prev);
+                  }}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Allow Jumps</span>
+              </label>
             </div>
             <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer text-center" onClick={HandleAddToMask}>
               {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}

@@ -13,6 +13,7 @@ interface Data {
   inProgress: boolean;
   uploadDate: string;
   star: boolean;
+  isViewed: boolean;
 }
 
 const Home = ({ paths }: { paths: string }) => {
@@ -69,6 +70,18 @@ const Home = ({ paths }: { paths: string }) => {
                 <a className="flex space-x-4 justify-center items-center text-center" href={`/${path.fileName}`}>
                   {" "}
                   {getStarredIcon(path.star)}
+                  <div>
+                    {path.isViewed && (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+                        />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                      </svg>
+                    )}
+                  </div>
                   <div className="flex space-x-2 justify-center items-center">
                     {path.inProgress ? (
                       <svg
@@ -128,7 +141,6 @@ const Home = ({ paths }: { paths: string }) => {
 };
 
 function getStarredIcon(starred: boolean) {
-  console.log("Getting icon");
   if (starred) {
     return <StarredIcon />;
   } else {
@@ -174,15 +186,15 @@ export async function getServerSideProps() {
 
   for (let i = 0; i < images.length; i++) {
     let image = images[i];
-    console.log({ image });
     let mask = masks.find((mask: string) => mask.includes(image.split(".")[0]));
     let inProgress = res.data["images"].find((item: any) => item.filename == image)["inProgress"] as boolean;
     let uploadDate = res.data["images"].find((item: any) => item.filename == image)["uploadDate"] as string;
     let star = res.data["images"].find((item: any) => item.filename == image)["star"] as boolean;
-    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress, uploadDate: uploadDate, star: star };
+    let isViewed = res.data["images"].find((item: any) => item.filename == image)["isViewed"] as boolean;
+    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress, uploadDate: uploadDate, star: star, isViewed: isViewed };
   }
 
-  console.log({ images: images });
+  // console.log({ images: images });
 
   return {
     props: {

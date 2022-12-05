@@ -3,6 +3,7 @@ import express from "express";
 import router from "./routes/images";
 import inProgressRouter from "./routes/inProgress";
 import setStarRouter from "./routes/star";
+import isViewedRouter from "./routes/isViewed";
 import morgan from "morgan";
 import bodyParser from "body-parser";
 import mongoose from "mongoose";
@@ -33,6 +34,7 @@ app.use((req, res, next) => {
 app.use("/images", router);
 app.use("/setInProgress", inProgressRouter);
 app.use("/star", setStarRouter);
+app.use("/isViewed", isViewedRouter);
 
 app.use((req, res, next) => {
   const error = new CustomError(404, "Not found");
