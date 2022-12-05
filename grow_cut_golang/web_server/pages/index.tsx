@@ -12,6 +12,7 @@ interface Data {
   hasMask: boolean;
   inProgress: boolean;
   uploadDate: string;
+  star: boolean;
 }
 
 const Home = ({ paths }: { paths: string }) => {
@@ -48,6 +49,11 @@ const Home = ({ paths }: { paths: string }) => {
 
             <p>Betyder att en mask håller på att tas fram</p>
           </div>
+          <div className="flex items-start justify-center space-x-2">
+            <StarredIcon />
+
+            <p>Betyder att en mask är bedömd tillräckligt bra för ML</p>
+          </div>
         </div>
       </div>
       <div className="flex flex-col justify-start items-start">
@@ -58,10 +64,11 @@ const Home = ({ paths }: { paths: string }) => {
             .sort((a: Data, b: Data) => {
               return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
             })
-            .map((path: { fileName: string; hasMask: boolean; inProgress: boolean; uploadDate: string }, index: number) => (
+            .map((path: Data, index: number) => (
               <div key={path.fileName} title={path.uploadDate} className="flex flex-row items-end w-full justify-between  min-w-[50%]">
-                <a className="" href={`/${path.fileName}`}>
+                <a className="flex space-x-4 justify-center items-center text-center" href={`/${path.fileName}`}>
                   {" "}
+                  {getStarredIcon(path.star)}
                   <div className="flex space-x-2 justify-center items-center">
                     {path.inProgress ? (
                       <svg
@@ -120,6 +127,31 @@ const Home = ({ paths }: { paths: string }) => {
   );
 };
 
+function getStarredIcon(starred: boolean) {
+  console.log("Getting icon");
+  if (starred) {
+    return <StarredIcon />;
+  } else {
+    return <UnStarredIcon />;
+  }
+}
+
+function StarredIcon() {
+  return (
+    <svg className="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+    </svg>
+  );
+}
+
+function UnStarredIcon() {
+  return (
+    <svg className="w-4 h-4 text-gray-300 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+    </svg>
+  );
+}
+
 export async function getServerSideProps() {
   console.log("getServerSideProps in pages/index.tsx");
   let res = await axios.get(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`, {
@@ -146,7 +178,8 @@ export async function getServerSideProps() {
     let mask = masks.find((mask: string) => mask.includes(image.split(".")[0]));
     let inProgress = res.data["images"].find((item: any) => item.filename == image)["inProgress"] as boolean;
     let uploadDate = res.data["images"].find((item: any) => item.filename == image)["uploadDate"] as string;
-    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress, uploadDate: uploadDate };
+    let star = res.data["images"].find((item: any) => item.filename == image)["star"] as boolean;
+    images[i] = { fileName: image, hasMask: mask !== undefined, inProgress: inProgress, uploadDate: uploadDate, star: star };
   }
 
   console.log({ images: images });

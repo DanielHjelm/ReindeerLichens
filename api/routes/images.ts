@@ -110,6 +110,7 @@ router.get("/", async (req, res, next) => {
               filename: file.filename,
               uploadDate: file.uploadDate,
               inProgress: file.inProgress ?? false,
+              star: file.star ?? false,
             };
           }),
         });

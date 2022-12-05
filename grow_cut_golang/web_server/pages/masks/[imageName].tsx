@@ -8,12 +8,13 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [lineWidth, setLineWidth] = React.useState(20);
   let [requestStatus, setRequestStatus] = React.useState("idle");
   let [updateRequestStatus, setUpdateRequestStatus] = React.useState("idle");
-
+  let [starRequstStatus, setStarRequestStatus] = React.useState("idle");
+  let [showMask, setShowMask] = React.useState(true);
+  let [starred, setStarred] = React.useState(false);
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
   let isDrawing = false;
-  let [maskLoaded, setMaskLoaded] = React.useState(false);
 
   function removeBackground(imageData: ImageData): ImageData {
     let data = imageData.data;
@@ -47,11 +48,40 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     return imageData;
   }
 
+  async function getStarStatus() {
+    setStarRequestStatus("pending");
+    let response = await fetch(`http://localhost:3000/api/star?fileName=${encodeURIComponent(fileName)}`, {
+      method: "GET",
+      mode: "no-cors",
+      headers: {
+        "Allow-Control-Allow-Origin": "*",
+      },
+    });
+    let star: boolean;
+
+    if (response.status === 200) {
+      let body = await response.json();
+
+      console.log({ body });
+      star = body.star;
+      setStarRequestStatus("idle");
+      setStarred(star);
+    } else {
+      console.log({ response: await response.json() });
+      setStarRequestStatus("error");
+      setTimeout(() => {
+        setStarRequestStatus("idle");
+        setStarred(star);
+      }, 2000);
+    }
+    resetCanvas();
+  }
+
   useEffect(() => {
+    getStarStatus();
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctxRef.current = ctx;
-
     const img = new Image();
     img.src = image;
     img.onload = () => {
@@ -79,11 +109,11 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         let mask = removeBackground(imageData);
 
         ctx.putImageData(mask, 0, 0);
-        setMaskLoaded(true);
+
         setMaskSize({ width: msk.width, height: msk.height });
       };
     }
-  }, [maskLoaded]);
+  }, []);
 
   function resetCanvas() {
     const msk = new Image();
@@ -106,7 +136,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       let mask = removeBackground(imageData);
 
       ctx.putImageData(mask, 0, 0);
-      setMaskLoaded(true);
+
       setMaskSize({ width: msk.width, height: msk.height });
     };
   }
@@ -245,7 +275,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     switch (status) {
       case "ok":
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-white">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-black">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
           </svg>
         );
@@ -288,6 +318,27 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     }
   }
 
+  async function handleSaveStar() {
+    console.log("Saving star");
+    setStarRequestStatus("pending");
+    let payload = {
+      fileName: fileName,
+      star: !starred,
+    };
+    console.log({ payload });
+    let response = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/star`, payload, { validateStatus: (status) => status < 500 });
+    if (response.status == 200) {
+      setStarRequestStatus("ok");
+      setStarred(!starred);
+    } else {
+      setStarRequestStatus("error");
+      console.log(response.data);
+    }
+    setTimeout(() => {
+      setStarRequestStatus("idle");
+    }, 1000);
+  }
+
   return (
     <div className={`relative w-[${imageSize.width}px] h-[${imageSize.height}px]`}>
       <style jsx global>{`
@@ -297,7 +348,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           width: ${imageSize.width}px;
         }
       `}</style>
+
       <canvas
+        hidden={!showMask}
         onMouseDown={startDrawing}
         onMouseUp={endDrawing}
         onMouseMove={draw}
@@ -306,36 +359,54 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         width={maskSize.width}
         height={maskSize.height}
       ></canvas>
+
       <img className="" height={imageSize.height} width={imageSize.width} src={image} alt="image" />
       <div className="fixed top-1/2 left-[5rem] bg-white rounded p-4">
+        <div className="flex space-x-1 mb-4">
+          <p className="text-sm">Star this image (Good enough for ML)</p>
+          <div onClick={() => handleSaveStar()} className="cursor-pointer w-6 h-6">
+            {starRequstStatus === "idle" ? getStarredIcon(starred) : getRequestStatusSymbol(starRequstStatus)}
+          </div>
+        </div>
         <div>
-          <p>Set lineWidth</p>
-          <input
-            className="border rounded max-w-[3rem] px-2"
-            type="text"
-            value={lineWidth}
-            onChange={(e) => {
-              if (e.target.value === "") {
-                setLineWidth(1);
-                ctxRef.current!.lineWidth = 1;
-                return;
-              }
-              console.log(e.target.value);
-              setLineWidth(parseInt(e.target.value));
-              ctxRef.current!.lineWidth = parseInt(e.target.value);
-            }}
-          />
-        </div>
-        <div className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
-          {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
-        </div>
-        <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer" onClick={resetCanvas}>
-          Reset
+          <label className="inline-flex relative items-center cursor-pointer">
+            <input type="checkbox" value="" className="sr-only peer" onClick={() => setShowMask((prev) => !prev)} />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Hide mask</span>
+          </label>
         </div>
 
-        <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer" onClick={HandleAddToMask}>
-          {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
-        </div>
+        {showMask && (
+          <div>
+            <div>
+              <p>Set lineWidth</p>
+              <input
+                className="border rounded max-w-[3rem] px-2"
+                type="text"
+                value={lineWidth}
+                onChange={(e) => {
+                  if (e.target.value === "") {
+                    setLineWidth(1);
+                    ctxRef.current!.lineWidth = 1;
+                    return;
+                  }
+                  console.log(e.target.value);
+                  setLineWidth(parseInt(e.target.value));
+                  ctxRef.current!.lineWidth = parseInt(e.target.value);
+                }}
+              />
+            </div>
+            <div className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
+              {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
+            </div>
+            <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
+              Reset
+            </div>
+            <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer text-center" onClick={HandleAddToMask}>
+              {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
+            </div>
+          </div>
+        )}
       </div>
       <div id="line-width-indicator" className="absolute rounded-full"></div>
     </div>
@@ -369,4 +440,29 @@ export async function getStaticPaths() {
     paths: paths,
     fallback: false,
   };
+}
+
+function getStarredIcon(starred: boolean) {
+  console.log("Getting icon");
+  if (starred) {
+    return <StarredIcon />;
+  } else {
+    return <UnStarredIcon />;
+  }
+}
+
+function StarredIcon() {
+  return (
+    <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+    </svg>
+  );
+}
+
+function UnStarredIcon() {
+  return (
+    <svg className="w-5 h-5 text-gray-300 dark:text-gray-500" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"></path>
+    </svg>
+  );
 }
