@@ -90,20 +90,31 @@ def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
     file_locations = []
     for file in filenames.json()["images"]:
 
-        # Check if the file was uploaded to database in the last 24 hours
-        if onlyLast24Hour and file["uploadDate"] < (datetime.now() - timedelta(hours = 24)).isoformat():
+
+        # Check if the file was uploaded to database in the last 24 hours and is starred
+        if ("mask" in file["filename"]) or (file["star"] is False) or (onlyLast24Hour and file["uploadDate"] < (datetime.now() - timedelta(hours = 24)).isoformat()):
             continue
+
 
         # Append url for image to list
         urls.append(request_url+'/'+file["filename"])
+        urls.append(request_url+'/'+file["filename"].split(".")[0]+"_mask."+file["filename"].split(".")[1])
+
+        # Create folder for file if it does not exist
+        createFolders([outputFolder + "/" + file["filename"].split(".")[0]])
+
+        # Append file location to list
+        file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
+        file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+ "/"+ file["filename"].split(".")[0]+"_mask."+file["filename"].split(".")[1])
+
         
-        # Create folders for images and add there location to file_locations
-        if file["filename"].rsplit('_', 1)[-1].split(".")[0] == "mask":
-            createFolders([outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]])
-            file_locations.append(outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]+"/"+file["filename"])
-        else:
-            createFolders([outputFolder + "/" + file["filename"].split(".")[0]])
-            file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
+        # # Create folders for images and add there location to file_locations
+        # if file["filename"].rsplit('_', 1)[-1].split(".")[0] == "mask":
+        #     createFolders([outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]])
+        #     file_locations.append(outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]+"/"+file["filename"])
+        # else:
+        #     createFolders([outputFolder + "/" + file["filename"].split(".")[0]])
+        #     file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
 
     # Create inputs for parallel download
     inputs = zip(urls, file_locations)
