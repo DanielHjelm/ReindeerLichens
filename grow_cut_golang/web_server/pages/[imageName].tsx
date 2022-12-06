@@ -15,9 +15,7 @@ const getBase64 = (file: Blob) => {
 };
 
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
-  let [loaded, setLoaded] = React.useState(false);
   let [requestStatus, setRequestStatus] = React.useState("idle");
-  const [canvasRef, setCanvasRef] = useState(useRef(null));
   const ctxRef = useRef<CanvasRenderingContext2D>();
   const [isDrawing, setIsDrawing] = useState(false);
   const [lineWidth, setLineWidth] = useState(3);
@@ -74,7 +72,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   // mounts for the first time
   useEffect(() => {
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    handleUserLeftScreen();
+    handleUserVisibilityChange();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -83,7 +81,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     ctx.lineWidth = lineWidth;
 
     // window.addEventListener("unload", handleUserLeftScreen, true);
-    window.addEventListener("visibilitychange", handleUserLeftScreen, true);
+    window.addEventListener("visibilitychange", handleUserVisibilityChange, true);
 
     ctxRef.current = ctx;
     var i = new Image();
@@ -98,14 +96,17 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 
     return () => {
       // window.removeEventListener("unload", handleUserLeftScreen, true);
-      window.removeEventListener("visibilitychange", handleUserLeftScreen, true);
+      window.removeEventListener("visibilitychange", handleUserVisibilityChange, true);
     };
   }, [lineColor, lineOpacity, lineWidth]);
 
-  function handleUserLeftScreen() {
+  function handleUserVisibilityChange() {
     if (document.visibilityState === "hidden") {
+      console.log("User left the screen");
+      axios.post("/api/hello");
       axios.post("/api/isViewed", { fileName: imageName, isViewed: false });
     } else if (document.visibilityState === "visible") {
+      console.log("User is back");
       axios.post("/api/isViewed", { fileName: imageName, isViewed: true });
     }
   }

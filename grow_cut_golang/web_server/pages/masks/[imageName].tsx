@@ -88,8 +88,17 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     });
   }
 
+  function handleUserVisibilityChange() {
+    if (document.visibilityState === "hidden") {
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: false });
+    } else if (document.visibilityState === "visible") {
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: true });
+    }
+  }
+
   useEffect(() => {
     getStarStatus();
+    handleUserVisibilityChange();
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctxRef.current = ctx;
@@ -99,14 +108,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       setImageSize({ width: img.width, height: img.height });
     };
 
-    window.addEventListener("mousemove", (e) => {
-      if (!isDrawing) {
-        let div = document.getElementById("line-width-indicator");
-        if (!div) return;
-        div.style.left = e.clientX + "px";
-        div.style.top = e.clientY + "px";
-      }
-    });
+    window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
     if (mask !== "") {
       const msk = new Image();
@@ -127,7 +129,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     axios.post("/api/hello");
 
     return () => {
-      axios.post("/api/hello");
+      window.removeEventListener("visibilitychange", handleUserVisibilityChange);
     };
   }, []);
 
