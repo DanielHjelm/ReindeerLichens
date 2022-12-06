@@ -15,9 +15,7 @@ const getBase64 = (file: Blob) => {
 };
 
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
-  let [loaded, setLoaded] = React.useState(false);
   let [requestStatus, setRequestStatus] = React.useState("idle");
-  const [canvasRef, setCanvasRef] = useState(useRef(null));
   const ctxRef = useRef<CanvasRenderingContext2D>();
   const [isDrawing, setIsDrawing] = useState(false);
   const [lineWidth, setLineWidth] = useState(3);
@@ -26,6 +24,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   let [endPoint, setEndPoint] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
   let [pixels, setPixels] = React.useState<{ x: number; y: number }[]>([]);
+  let [allowJumps, setAllowJumps] = React.useState(true);
 
   async function sendRequest() {
     if (requestStatus !== "idle") {
@@ -46,6 +45,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
           fileName: imageName,
           pixels: pixels,
           img: imageFile,
+          allowJumps: allowJumps,
         }),
       });
       console.log({ response });
@@ -53,7 +53,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
       if (response.status == 200 || response.status == 0) {
         setRequestStatus("ok");
         setTimeout(() => {
-          window.location.replace("/");
+          // window.location.replace("/");
         }, 2000);
       } else {
         console.log(response.status);
@@ -72,7 +72,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   // mounts for the first time
   useEffect(() => {
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-
+    handleUserVisibilityChange();
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -80,13 +80,8 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     ctx.strokeStyle = lineColor;
     ctx.lineWidth = lineWidth;
 
-    window.addEventListener(
-      "resize",
-      function (event) {
-        console.log(event.target);
-      },
-      true
-    );
+    window.addEventListener("visibilitychange", handleUserVisibilityChange, true);
+    window.addEventListener("beforeunload", NotifyUserClickedBack);
 
     ctxRef.current = ctx;
     var i = new Image();
@@ -98,7 +93,23 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 
       setImageSize({ width: i.width, height: i.height });
     };
+
+    return () => {
+      window.removeEventListener("visibilitychange", handleUserVisibilityChange, true);
+      window.removeEventListener("beforeunload", NotifyUserClickedBack);
+    };
   }, [lineColor, lineOpacity, lineWidth]);
+
+  function NotifyUserClickedBack() {
+    axios.post("/api/isViewed", { fileName: imageName, isViewed: false }, { validateStatus: (status) => status < 500 });
+  }
+  function handleUserVisibilityChange() {
+    if (document.visibilityState === "hidden") {
+      axios.post("/api/isViewed", { fileName: imageName, isViewed: false }, { validateStatus: (status) => status < 500 });
+    } else if (document.visibilityState === "visible") {
+      axios.post("/api/isViewed", { fileName: imageName, isViewed: true }, { validateStatus: (status) => status < 500 });
+    }
+  }
 
   // Function for starting the drawing
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement, MouseEvent>) => {
@@ -203,6 +214,21 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
             setEndPoint(e.target.value);
           }}
         />
+        <div>
+          <label className="inline-flex relative items-center cursor-pointer">
+            <input
+              type="checkbox"
+              value=""
+              className="sr-only peer"
+              onClick={(e) => {
+                setAllowJumps(e.currentTarget.checked);
+              }}
+              defaultChecked
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Allow Jumps</span>
+          </label>
+        </div>
         <div
           className=" max-h-[4rem] max-w-[10rem] right-10 bottom-10 z-20 bg-blue-700 border rounded py-2 px-6 text-white font-bold border-black cursor-pointer"
           onClick={sendRequest}
@@ -272,10 +298,10 @@ export async function getStaticPaths() {
   }
 
   let body = res.data;
-  console.log({ body });
+  // console.log({ body });
   let images = body.images;
   let fileNames = images.map((image: any) => image.filename);
-  console.log({ fileNames });
+  // console.log({ fileNames });
 
   return {
     paths: fileNames.map((fileName: string) => ({

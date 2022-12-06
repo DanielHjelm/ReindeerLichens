@@ -9,7 +9,7 @@ import (
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
 )
 
-func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState bool) [][]int {
+func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState, allowJumps bool) [][]int {
 
 	numProcs := runtime.NumCPU()
 	saveEveryNIterations := 40
@@ -86,16 +86,19 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 				done = true
 				continue
 			}
-			if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
-				if distantNeighbors > 20 {
+			if allowJumps {
+				if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
+					if distantNeighbors > 20 {
 
-					fmt.Printf("Restarting growth, %d distant neighbors found\n", distantNeighbors)
-					done = false
+						fmt.Printf("Restarting growth, %d distant neighbors found\n", distantNeighbors)
+						done = false
+					}
+				} else {
+
+					fmt.Printf("Stopped on iteration %d\n", iteration)
 				}
-			} else {
-
-				fmt.Printf("Stopped on iteration %d\n", iteration)
 			}
+
 		}
 
 		labels = utils.CopyArrayInt(labels_next)
@@ -140,7 +143,7 @@ func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y 
 	nValues := 0
 	start := -1
 	limit := -4
-	threshold := 0.99993 // Feel free to change this
+	threshold := 0.9999 // Feel free to change this
 	// fmt.Printf("Checking pixel %d, %d\n", y, x)
 	rMean, gMean, bMean := 0.0, 0.0, 0.0
 

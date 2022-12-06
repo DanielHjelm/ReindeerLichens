@@ -92,6 +92,7 @@ const router = express.Router();
 // Get information about all images in DB
 router.get("/", async (req, res, next) => {
   // Try to find images in database
+  console.log("Running get");
   try {
     await gridfsBucket.find().toArray((err: any, files: any) => {
       // Check if files exists
@@ -105,12 +106,14 @@ router.get("/", async (req, res, next) => {
           numberOfImages: files.length,
           images: files.map((file: any) => {
             // Do we want to see more? More attributes: length, chunkSize, uploadDate etc.
+
             return {
               _id: file._id,
               filename: file.filename,
               uploadDate: file.uploadDate,
               inProgress: file.inProgress ?? false,
               star: file.star ?? false,
+              isViewed: file.isViewed ?? false,
             };
           }),
         });

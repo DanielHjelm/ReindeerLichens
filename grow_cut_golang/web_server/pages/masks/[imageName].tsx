@@ -11,6 +11,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [starRequstStatus, setStarRequestStatus] = React.useState("idle");
   let [showMask, setShowMask] = React.useState(true);
   let [starred, setStarred] = React.useState(false);
+  let [allowJump, setAllowJump] = React.useState(true);
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
@@ -43,6 +44,11 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         data[i] = 0;
         data[i + 1] = 0;
         data[i + 2] = 0;
+        data[i + 3] = 255;
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
       }
     }
     return imageData;
@@ -77,8 +83,20 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     resetCanvas();
   }
 
+  function handleUserVisibilityChange() {
+    if (document.visibilityState === "hidden") {
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: false }, { validateStatus: (status) => status < 500 });
+    } else if (document.visibilityState === "visible") {
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: true }, { validateStatus: (status) => status < 500 });
+    }
+  }
+  function NotifyUserClickedBack() {
+    axios.post("/api/isViewed", { fileName: fileName, isViewed: false }, { validateStatus: (status) => status < 500 });
+  }
+
   useEffect(() => {
     getStarStatus();
+    handleUserVisibilityChange();
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctxRef.current = ctx;
@@ -87,15 +105,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     img.onload = () => {
       setImageSize({ width: img.width, height: img.height });
     };
+    window.addEventListener("beforeunload", NotifyUserClickedBack);
 
-    window.addEventListener("mousemove", (e) => {
-      if (!isDrawing) {
-        let div = document.getElementById("line-width-indicator");
-        if (!div) return;
-        div.style.left = e.clientX + "px";
-        div.style.top = e.clientY + "px";
-      }
-    });
+    window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
     if (mask !== "") {
       const msk = new Image();
@@ -113,13 +125,23 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         setMaskSize({ width: msk.width, height: msk.height });
       };
     }
+    axios.post("/api/hello");
+
+    return () => {
+      window.removeEventListener("beforeunload", NotifyUserClickedBack);
+
+      window.removeEventListener("visibilitychange", handleUserVisibilityChange);
+    };
   }, []);
 
   function resetCanvas() {
     const msk = new Image();
+
     const canvas = document.getElementById("canvas") as HTMLCanvasElement;
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let addBtn = document.getElementById("add-btn")!;
+    let allowJumpSwitch = document.getElementById("allow-jump-switch") as HTMLInputElement;
+    if (allowJumpSwitch) allowJumpSwitch.hidden = true;
     let addText = document.getElementById("add-text")!;
     addText.innerText = "Add";
     addBtn.style.backgroundColor = "white";
@@ -143,6 +165,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
   async function HandleAddToMask() {
     let addBtn = document.getElementById("add-btn")!;
+    let allowJumpSwitch = document.getElementById("allow-jump-switch") as HTMLInputElement;
+    allowJumpSwitch.hidden = false;
     if (addBtn.innerText === "Send") {
       if (updateRequestStatus !== "idle") {
         return;
@@ -150,9 +174,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       let canvas = document.getElementById("canvas") as HTMLCanvasElement;
       let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      let mask = blackoutBackground(imageData);
+
       let pixelData = [];
-      for (let i = 0; i < mask.data.length; i += 4) {
+      for (let i = 0; i < imageData.data.length; i += 4) {
         if (imageData.data[i + 3] !== 0) {
           let x = (i / 4) % canvas.width;
           let y = Math.floor(i / 4 / canvas.width);
@@ -164,8 +188,10 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         fileName: fileName,
         pixels: pixelData,
         img: image,
+        allowJump: allowJump,
       };
       try {
+        console.log({ data });
         setUpdateRequestStatus("pending");
         let response = await fetch(`http://${process.env.NEXT_PUBLIC_GOLANG_HOST}/start`, {
           method: "POST",
@@ -250,15 +276,19 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
     let formdata = new FormData();
     let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
+    let imageDataCopy = new Uint8Array(imageData.data);
     let mask = blackoutBackground(imageData);
     console.log(mask);
     ctxRef.current!.putImageData(mask, 0, 0);
+
     let b64 = canvas.toDataURL();
     let file = await base64ToFile(b64);
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     setRequestStatus("pending");
+    imageData.data.set(imageDataCopy);
+    ctxRef.current!.putImageData(imageData, 0, 0);
 
     let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
@@ -372,7 +402,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
           <label className="inline-flex relative items-center cursor-pointer">
             <input type="checkbox" value="" className="sr-only peer" onClick={() => setShowMask((prev) => !prev)} />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Hide mask</span>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Hide mask</span>
           </label>
         </div>
 
@@ -401,6 +431,21 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
             </div>
             <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
               Reset
+            </div>
+            <div id="allow-jump-switch" hidden={true}>
+              <label className="inline-flex relative items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  defaultChecked={allowJump}
+                  onClick={(e) => {
+                    setAllowJump(e.currentTarget.checked);
+                  }}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Allow Jumps</span>
+              </label>
             </div>
             <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer text-center" onClick={HandleAddToMask}>
               {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
@@ -443,7 +488,6 @@ export async function getStaticPaths() {
 }
 
 function getStarredIcon(starred: boolean) {
-  console.log("Getting icon");
   if (starred) {
     return <StarredIcon />;
   } else {
