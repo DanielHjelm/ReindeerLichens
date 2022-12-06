@@ -139,3 +139,5 @@ result/*
 */.DS_Store
 */.ipynb_checkpoints/*
 node_modules
+grow_cut_golang/web_server/.env.local
+grow_cut_golang/web_server/.env.local

@@ -7,9 +7,9 @@ sys.path.append('remove_frame')
 from removeFrame import removeFrame
 import colour
 
-def histogram_norm(path, clipLimit=6.0, tileGridSize=(6,6)):
-    img = cv2.imread(path)
-    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
+def histogram_norm(img, clipLimit=6.0, tileGridSize=(6,6)):
+    #img = cv2.imread(path)
+    lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
     l_channel, a, b = cv2.split(lab)
 
     # Applying CLAHE to L-channel - tileGridSize controls the size of the where local
@@ -18,7 +18,8 @@ def histogram_norm(path, clipLimit=6.0, tileGridSize=(6,6)):
 
     # merge the CLAHE enhanced L-channel with the a and b channel
     limg = cv2.merge((cl,a,b))
-    return limg
+    histoImg = cv2.cvtColor(limg, cv2.COLOR_LAB2BGR)
+    return histoImg
 
 
 def color_correction(path, method = 'gamma', dist_meas = 'euclidean'):
@@ -97,8 +98,8 @@ def color_correction(path, method = 'gamma', dist_meas = 'euclidean'):
     print(f'Corrected blue: {gammaCorrection(sampleMean,gamma).T}')
     print(f'Gamma: {gamma}')
     
-    correctedImg = gammaCorrection(img, gamma)
-    originalImg = img
+    correctedImg = gammaCorrection(noFrame, gamma)
+    originalImg = noFrame
     
     return (correctedImg, originalImg, gamma)
 
