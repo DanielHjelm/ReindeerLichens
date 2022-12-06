@@ -80,8 +80,8 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     ctx.strokeStyle = lineColor;
     ctx.lineWidth = lineWidth;
 
-    // window.addEventListener("unload", handleUserLeftScreen, true);
     window.addEventListener("visibilitychange", handleUserVisibilityChange, true);
+    window.addEventListener("beforeunload", NotifyUserClickedBack);
 
     ctxRef.current = ctx;
     var i = new Image();
@@ -95,19 +95,19 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     };
 
     return () => {
-      // window.removeEventListener("unload", handleUserLeftScreen, true);
       window.removeEventListener("visibilitychange", handleUserVisibilityChange, true);
+      window.removeEventListener("beforeunload", NotifyUserClickedBack);
     };
   }, [lineColor, lineOpacity, lineWidth]);
 
+  function NotifyUserClickedBack() {
+    axios.post("/api/isViewed", { fileName: imageName, isViewed: false }, { validateStatus: (status) => status < 500 });
+  }
   function handleUserVisibilityChange() {
     if (document.visibilityState === "hidden") {
-      console.log("User left the screen");
-      axios.post("/api/hello");
-      axios.post("/api/isViewed", { fileName: imageName, isViewed: false });
+      axios.post("/api/isViewed", { fileName: imageName, isViewed: false }, { validateStatus: (status) => status < 500 });
     } else if (document.visibilityState === "visible") {
-      console.log("User is back");
-      axios.post("/api/isViewed", { fileName: imageName, isViewed: true });
+      axios.post("/api/isViewed", { fileName: imageName, isViewed: true }, { validateStatus: (status) => status < 500 });
     }
   }
 

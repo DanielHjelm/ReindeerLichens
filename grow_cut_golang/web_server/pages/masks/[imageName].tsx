@@ -78,22 +78,15 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     resetCanvas();
   }
 
-  function notifyIsViewed() {
-    axios.post(`http://localhost:3000/api/isViewed`, {
-      method: "POST",
-      headers: {
-        "Allow-Control-Allow-Origin": "*",
-      },
-      body: JSON.stringify({ fileName, isViwewd: true }),
-    });
-  }
-
   function handleUserVisibilityChange() {
     if (document.visibilityState === "hidden") {
-      axios.post("/api/isViewed", { fileName: fileName, isViewed: false });
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: false }, { validateStatus: (status) => status < 500 });
     } else if (document.visibilityState === "visible") {
-      axios.post("/api/isViewed", { fileName: fileName, isViewed: true });
+      axios.post("/api/isViewed", { fileName: fileName, isViewed: true }, { validateStatus: (status) => status < 500 });
     }
+  }
+  function NotifyUserClickedBack() {
+    axios.post("/api/isViewed", { fileName: fileName, isViewed: false }, { validateStatus: (status) => status < 500 });
   }
 
   useEffect(() => {
@@ -107,6 +100,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     img.onload = () => {
       setImageSize({ width: img.width, height: img.height });
     };
+    window.addEventListener("beforeunload", NotifyUserClickedBack);
 
     window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
@@ -129,6 +123,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     axios.post("/api/hello");
 
     return () => {
+      window.removeEventListener("beforeunload", NotifyUserClickedBack);
+
       window.removeEventListener("visibilitychange", handleUserVisibilityChange);
     };
   }, []);
@@ -482,7 +478,6 @@ export async function getStaticPaths() {
 }
 
 function getStarredIcon(starred: boolean) {
-  console.log("Getting icon");
   if (starred) {
     return <StarredIcon />;
   } else {
