@@ -53,7 +53,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
       if (response.status == 200 || response.status == 0) {
         setRequestStatus("ok");
         setTimeout(() => {
-          window.location.replace("/");
+          // window.location.replace("/");
         }, 2000);
       } else {
         console.log(response.status);

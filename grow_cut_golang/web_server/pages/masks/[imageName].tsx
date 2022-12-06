@@ -174,9 +174,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       let canvas = document.getElementById("canvas") as HTMLCanvasElement;
       let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
       let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      let mask = blackoutBackground(imageData);
+
       let pixelData = [];
-      for (let i = 0; i < mask.data.length; i += 4) {
+      for (let i = 0; i < imageData.data.length; i += 4) {
         if (imageData.data[i + 3] !== 0) {
           let x = (i / 4) % canvas.width;
           let y = Math.floor(i / 4 / canvas.width);
