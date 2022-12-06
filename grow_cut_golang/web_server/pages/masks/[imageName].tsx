@@ -44,6 +44,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         data[i] = 0;
         data[i + 1] = 0;
         data[i + 2] = 0;
+        data[i + 3] = 255;
       } else {
         data[i] = 255;
         data[i + 1] = 255;
@@ -190,6 +191,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         allowJump: allowJump,
       };
       try {
+        console.log({ data });
         setUpdateRequestStatus("pending");
         let response = await fetch(`http://${process.env.NEXT_PUBLIC_GOLANG_HOST}/start`, {
           method: "POST",
