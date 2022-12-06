@@ -274,6 +274,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
     let formdata = new FormData();
     let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
+    let imageDataCopy = new Uint8Array(imageData.data);
     let mask = blackoutBackground(imageData);
     console.log(mask);
     ctxRef.current!.putImageData(mask, 0, 0);
@@ -284,6 +285,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     setRequestStatus("pending");
+    imageData.data.set(imageDataCopy);
+    ctxRef.current!.putImageData(imageData, 0, 0);
 
     let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
