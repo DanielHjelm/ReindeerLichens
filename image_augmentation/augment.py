@@ -1,8 +1,9 @@
-import imageio.v2 as imageio
+import imageio
 import imgaug
 import matplotlib.pyplot as plt
 import os
 import time
+import cv2
 
 class ImageAugmenter:
     """
@@ -90,18 +91,27 @@ def contrast_image(image, mask, type_of_contrast):
 def augment_images(path_to_folder):
 
     """Augment images and masks in path_to_folder. A ImageAugmenter object is created for each image and mask."""
-
     for folder in os.listdir(path_to_folder):
-        if folder != ".DS_Store":
+        if "DS_Store" not in folder:
             for image in os.listdir(os.path.join(path_to_folder, folder)):
+                if "DS_Store" in image:
+                    continue
                 if "mask" in image:
+                    mask_name = image.split(".")[0]
                     mask_path = os.path.join(path_to_folder, folder, image)
                 else:
-                     image_path = os.path.join(path_to_folder, folder, image)
-
+                    image_name = image.split(".")[0]
+                    image_path = os.path.join(path_to_folder, folder, image)
+            # print(f'Image name: {image.split(".")[0]}')
             # Read image and masks
+            # print(image_name)
+            # print(mask_name)
+            print("-------------")
             image = imageio.imread(image_path)
             mask = imageio.imread(mask_path)
+
+            
+
 
             # Create ImageAugmenter object
             image_augmenter = ImageAugmenter(image, mask)
@@ -110,12 +120,10 @@ def augment_images(path_to_folder):
             gen = image_augmenter.return_augmented_images()
 
             # Example on how you access the images and masks. They are stored as (image, mask) tuples in the generator.
-            # for i, (image, mask) in enumerate(gen):
-            #     plt.subplot(1, 2, 1)
-            #     plt.imshow(image)
-            #     plt.subplot(1, 2, 2)
-            #     plt.imshow(mask)
-            #     plt.show()
+            for i, (image, mask) in enumerate(gen):
+                plt.imsave(path_to_folder + "/" + folder + "/" + image_name + '_augmented' + f'_{i+1}' + "." + image_path.split('.')[-1], image)
+                plt.imsave(path_to_folder + "/" + folder + "/" + mask_name + '_augmented' + f'_{i+1}' + "." + mask_path.split('.')[-1], mask)
+                print(f'Image and mask saved to: {path_to_folder + "/" + folder}')
 
 
 
