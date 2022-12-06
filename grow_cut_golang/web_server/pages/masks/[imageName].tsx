@@ -44,6 +44,10 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         data[i] = 0;
         data[i + 1] = 0;
         data[i + 2] = 0;
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
       }
     }
     return imageData;
@@ -273,6 +277,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let mask = blackoutBackground(imageData);
     console.log(mask);
     ctxRef.current!.putImageData(mask, 0, 0);
+
     let b64 = canvas.toDataURL();
     let file = await base64ToFile(b64);
 
