@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 
 
 def downloadFileFromDB(args):
-
     '''Download file from database'''
 
     # Time
@@ -26,9 +25,9 @@ def downloadFileFromDB(args):
     # File type
     file_type = filename.split(".")[1]
 
-    try: 
+    try:
         # Get image from server
-        image = requests.get(url = url)
+        image = requests.get(url=url)
 
         # Decode image
         image_decoded = base64.b64decode(image.content)
@@ -41,14 +40,13 @@ def downloadFileFromDB(args):
         plt.imsave(file_location, image)
         return (url, time.time() - t0)
         # print(f"Time to download and save {filename}:", time.time() - t0)
-        
+
     except Exception as e:
         print("Exception when downloading image: ", e)
         return ("", time.time() - t0)
 
 
 def dowload_parallel(inputs):
-
     '''Download images in parallel'''
 
     # Start time
@@ -68,46 +66,45 @@ def dowload_parallel(inputs):
 
 
 def createFolders(outputFolders=["downloaded_images"]):
-
     '''Create folders for downloaded images'''
 
     for folder in outputFolders:
         if not os.path.exists(folder):
             os.makedirs(folder)
 
-def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
 
+def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
     '''Download images from database'''
 
     # Create folder for downloaded images
     createFolders([outputFolder])
 
     # Fetch which images is in database
-    filenames = requests.get(url = request_url)
-
+    filenames = requests.get(url=request_url)
+    print(filenames)
     # Create list of inputs for parallel download
     urls = []
     file_locations = []
     for file in filenames.json()["images"]:
 
-
         # Check if the file was uploaded to database in the last 24 hours and is starred
-        if ("mask" in file["filename"]) or (file["star"] is False) or (onlyLast24Hour and file["uploadDate"] < (datetime.now() - timedelta(hours = 24)).isoformat()):
+        if ("mask" in file["filename"]) or (file["star"] is False) or (onlyLast24Hour and file["uploadDate"] < (datetime.now() - timedelta(hours=24)).isoformat()):
             continue
-
 
         # Append url for image to list
         urls.append(request_url+'/'+file["filename"])
-        urls.append(request_url+'/'+file["filename"].split(".")[0]+"_mask."+file["filename"].split(".")[1])
+        urls.append(request_url+'/'+file["filename"].split(".")
+                    [0]+"_mask."+file["filename"].split(".")[1])
 
         # Create folder for file if it does not exist
         createFolders([outputFolder + "/" + file["filename"].split(".")[0]])
 
         # Append file location to list
-        file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
-        file_locations.append(outputFolder + "/" + file["filename"].split(".")[0]+ "/"+ file["filename"].split(".")[0]+"_mask."+file["filename"].split(".")[1])
+        file_locations.append(
+            outputFolder + "/" + file["filename"].split(".")[0]+"/"+file["filename"])
+        file_locations.append(outputFolder + "/" + file["filename"].split(".")[
+                              0] + "/" + file["filename"].split(".")[0]+"_mask."+file["filename"].split(".")[1])
 
-        
         # # Create folders for images and add there location to file_locations
         # if file["filename"].rsplit('_', 1)[-1].split(".")[0] == "mask":
         #     createFolders([outputFolder + "/" + file["filename"].rsplit('_', 1)[-2]])
@@ -123,12 +120,16 @@ def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
     dowload_parallel(inputs)
 
 
-
-
 if __name__ == "__main__":
 
+    from dotenv import load_dotenv
+    load_dotenv("grow_cut_golang/web_server/.env.local")
+
     # Url to the API
-    request_url = "https://125a-82-209-142-153.eu.ngrok.io/images"
+    # request_url = "https://125a-82-209-142-153.eu.ngrok.io/images"
+    host = os.environ["NEXT_PUBLIC_IMAGES_API_HOST"]
+    request_url = f"https://{host}/images"
+    print(request_url)
 
     # Folder to save images
     outputFolder = "downloaded_images"
