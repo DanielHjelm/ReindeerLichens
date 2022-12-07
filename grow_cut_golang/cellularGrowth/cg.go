@@ -2,14 +2,22 @@ package cellulargrowth
 
 import (
 	"fmt"
+	"log"
 	"runtime"
 	"sync"
 	"time"
 
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
+	"github.com/mattn/go-tty"
 )
 
 func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState, allowJumps bool) [][]int {
+
+	tty, err := tty.Open()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tty.Close()
 
 	numProcs := runtime.NumCPU()
 	saveEveryNIterations := 40
@@ -76,16 +84,12 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		iteration++
 		wg.Wait()
 
-		if assigned > 200 {
-			fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
+		fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
+		if assigned > 15 {
 			done = false
 
 		} else {
-			if assigned < 20 {
-				fmt.Printf("Stopping on iteration %d due to only assigning %d pixels", iteration, assigned)
-				done = true
-				continue
-			}
+
 			if allowJumps {
 				if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
 					if distantNeighbors > 20 {
@@ -97,10 +101,28 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 
 					fmt.Printf("Stopped on iteration %d\n", iteration)
 				}
+			} else {
+				if assigned < 40 {
+					fmt.Printf("Stopping on iteration %d due to only assigning %d pixels", iteration, assigned)
+					labels = utils.CopyArrayInt(labels_next)
+					break
+
+				} else {
+					done = false
+				}
 			}
 
 		}
 
+		// Manual stop
+		r, err := tty.ReadRune()
+		if err != nil {
+			fmt.Printf("Error reading tty")
+			break
+		}
+		if string(r) == "q" {
+			done = true
+		}
 		labels = utils.CopyArrayInt(labels_next)
 		skipEven = !skipEven
 	}
