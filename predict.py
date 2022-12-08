@@ -38,6 +38,7 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
     prediction = np.squeeze(prediction)
 
     if plot:
+
         # Get prediction image
         pred = get_pred(prediction)
         
@@ -54,21 +55,20 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
         plt.title(f"Prediction on image {path_to_image.split('/')[-1]}")
         plt.show()
         
-    
-    else:
-        return prediction
-
     if save:
 
-        if pred is None:
+        if not plot:
             # Get prediction image
             pred = get_pred(prediction)
 
         # Save prediction and image
         split = path_to_image.split('/')[-1].split('.')
         pred.save(f"predictions/{split[0]}_mask.{split[1]}")
-        print(f"predictions/{path_to_image.split('/')[-1]}")
         image.save(f"predictions/{path_to_image.split('/')[-1]}")
+        print(f"Saved image {path_to_image.split('/')[-1]} and predicted mask")
+
+
+    return prediction
     
         
 
