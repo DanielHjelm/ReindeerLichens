@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"strconv"
 	"time"
 
 	"fmt"
@@ -17,10 +18,11 @@ import (
 )
 
 type Job struct {
-	FileName     string
-	InitialState []map[string]int
-	ImageData    [][][]uint8
-	AllowJumps   bool
+	FileName          string
+	InitialState      [][][]uint8
+	ImageData         [][][]uint8
+	AllowJumps        bool
+	NeighborThreshold float64
 }
 
 func handleCellularGrowth(pipeline *[]Job) {
@@ -37,14 +39,15 @@ func handleCellularGrowth(pipeline *[]Job) {
 			if !job.AllowJumps {
 				fmt.Printf("Job %v is not allowed to jump\n", job.FileName)
 			}
-			utils.SendInProgessStatus(job.FileName, true)
-			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false, job.AllowJumps)
+
+			// utils.SendInProgessStatus(job.FileName, true)
+			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false, job.AllowJumps, job.NeighborThreshold)
 			fmt.Printf("Cellular growth completed\n")
 			fileType := strings.Split(job.FileName, ".")[1]
 			maskName := strings.Split(job.FileName, ".")[0] + "_mask" + "." + fileType
 			utils.SaveMask(mask, "result/"+maskName)
 			fmt.Printf("Mask saved\n")
-			utils.SaveResultToDb("result/" + maskName)
+			utils.SaveResultToDb("result/"+maskName, job.NeighborThreshold)
 			utils.SendInProgessStatus(job.FileName, false)
 			fmt.Printf("Mask saved to mongo\n")
 		}
@@ -76,10 +79,11 @@ func main() {
 	}
 
 	type RequestBody struct {
-		Pixels     []map[string]int `json:"pixels"`
-		FileName   string           `json:"fileName"`
-		Img        string           `json:"img"`
-		AllowJumps bool             `json:"allowJumps"`
+		Mask              string `json:"mask"`
+		FileName          string `json:"fileName"`
+		Img               string `json:"img"`
+		AllowJumps        bool   `json:"allowJumps"`
+		NeighborThreshold string `json:"neighborThreshold"`
 	}
 	go handleCellularGrowth(&pipeline)
 
@@ -104,12 +108,27 @@ func main() {
 		}
 
 		// img, err := utils.ReadImageAsArray("temp.jpg")
+		// Convert base64 to image
+		initialState, err := utils.Base64ToArrayImage(r_body.Mask)
+		fmt.Printf("threshold: %v\n", r_body.NeighborThreshold)
+
+		if r_body.NeighborThreshold == "" || r_body.NeighborThreshold == "No data" {
+			r_body.NeighborThreshold = "0.99999" // Default threshold
+		}
+		var threshold float64
+		if n, err := strconv.ParseFloat(r_body.NeighborThreshold, 64); err == nil {
+			threshold = n
+		} else {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
 
 		job := Job{
-			FileName:     r_body.FileName,
-			InitialState: r_body.Pixels,
-			ImageData:    img,
-			AllowJumps:   r_body.AllowJumps,
+			FileName:          r_body.FileName,
+			InitialState:      initialState,
+			ImageData:         img,
+			AllowJumps:        r_body.AllowJumps,
+			NeighborThreshold: threshold,
 		}
 		fmt.Printf("Job added to pipeline\n")
 		pipeline = append(pipeline, job)

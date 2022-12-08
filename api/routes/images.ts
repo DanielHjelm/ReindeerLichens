@@ -114,6 +114,7 @@ router.get("/", async (req, res, next) => {
               inProgress: file.inProgress ?? false,
               star: file.star ?? false,
               isViewed: file.isViewed ?? false,
+              threshold: file.threshold ?? "No data",
             };
           }),
         });

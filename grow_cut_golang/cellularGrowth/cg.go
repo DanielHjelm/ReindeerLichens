@@ -11,9 +11,11 @@ import (
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
 )
 
-func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState, allowJumps bool) [][]int {
+func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState, allowJumps bool, threshold float64) [][]int {
 
-	// Listen for ley press events
+	utils.SaveImage("test.jpg", utils.ArrayToImage(initial_values))
+
+	// Listen for key press events
 	ch := make(chan string)
 	go func(ch chan string) {
 		// disable input buffering
@@ -23,6 +25,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		var b []byte = make([]byte, 1)
 		for {
 			os.Stdin.Read(b)
+			fmt.Printf("%b", b)
 			ch <- string(b)
 		}
 	}(ch)
@@ -32,14 +35,19 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 	labels := utils.CreateArrayInt(len(img), len(img[0]))
 
 	fmt.Printf("Starting cellular growth on image with size %dx%d\n", len(img), len(img[0]))
+	fmt.Printf("Using threshold %f\n", threshold)
 
-	for i := 0; i < len(initial_values); i++ {
-		x := initial_values[i]["x"]
-		y := initial_values[i]["y"]
-		labels[y][x] = 1
+	// Initialize labels
+	for y := 0; y < len(initial_values); y++ {
+		for x := 0; x < len(initial_values[0]); x++ {
+			r, g, b := initial_values[y][x][0], initial_values[y][x][1], initial_values[y][x][2]
+			if r == 0 && g == 0 && b == 0 {
+				labels[y][x] = 0 // background
+			} else {
+				labels[y][x] = 1 // foreground
+			}
+		}
 	}
-
-	utils.SaveMask(labels, "initial_mask.jpg")
 
 	labels_next := utils.CreateArrayInt(len(img), len(img[0]))
 
@@ -69,7 +77,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 						// 	continue
 						// }
 
-						assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, y, x)
+						assigned += assignBasedOnLocalMeanNorm(img, labels, labels_next, y, x, threshold)
 
 					}
 				}
@@ -93,7 +101,7 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		wg.Wait()
 
 		fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
-		if assigned > 15 {
+		if assigned > 30 {
 			done = false
 
 		} else {
@@ -126,14 +134,12 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		select {
 		case stdin, _ := <-ch:
 			if stdin == "q" {
-				fmt.Printf("\n\n ----  Manual Stop  ----\n\n")
+				fmt.Printf("Stopping on iteration %d due to user input\n", iteration)
 				done = true
 			}
-
 		default:
 
 		}
-
 		labels = utils.CopyArrayInt(labels_next)
 		skipEven = !skipEven
 	}
@@ -141,6 +147,8 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 	elapsed := time.Since(start)
 	fmt.Printf("Cellular growth took %s to run %d iterations\n", elapsed, iteration)
 	fmt.Printf("Average time per iteration: %s\n", elapsed/time.Duration(iteration))
+
+	utils.SaveMask(labels_next, "result.jpg")
 
 	return labels_next
 
@@ -165,7 +173,7 @@ func SaveState(img [][][]uint8, labels [][]int, initial_values []map[string]int,
 
 }
 
-func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y int, x int) int {
+func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y int, x int, threshold float64) int {
 	//fmt.Printf("Running assignBasedOnLocalMeanNorm on row %d, col %d\n", row, col)
 
 	if labels[y][x] != 0 {
@@ -176,7 +184,7 @@ func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y 
 	nValues := 0
 	start := -1
 	limit := -4
-	threshold := 0.9999 // Feel free to change this
+	// Feel free to change this
 	// fmt.Printf("Checking pixel %d, %d\n", y, x)
 	rMean, gMean, bMean := 0.0, 0.0, 0.0
 
@@ -242,7 +250,7 @@ func assignBasedOnLocalMeanNorm(img [][][]uint8, labels, labels_next [][]int, y 
 func FillInDistantNeighbors(img [][][]uint8, labels [][]int) int {
 	fmt.Printf("Running FillInDistantNeighbor\n")
 	// globalMeanNorm := utils.ImageMeanNorm(img)
-	threshold := 0.99994
+	threshold := 0.999999
 	reach := 100
 	found := 0
 

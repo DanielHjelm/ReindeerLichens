@@ -116,7 +116,7 @@ func SendInProgessStatus(fileName string, status bool) error {
 
 }
 
-func SaveResultToDb(path string) error {
+func SaveResultToDb(path string, usedThreshold float64) error {
 	// Send mask to database with a form
 	// https://stackoverflow.com/questions/20205796/post-data-using-the-content-type-multipart-form-data
 	apiHost := os.Getenv("NEXT_PUBLIC_IMAGES_API_HOST")
@@ -124,6 +124,7 @@ func SaveResultToDb(path string) error {
 		fmt.Printf("NEXT_PUBLIC_IMAGES_API_HOST not set")
 		return fmt.Errorf("NEXT_PUBLIC_IMAGES_API_HOST not set")
 	}
+	fileName := filepath.Base(path)
 	fmt.Printf("apiHost: %v\n", apiHost)
 	file, err := os.Open(path)
 	if err != nil {
@@ -141,7 +142,7 @@ func SaveResultToDb(path string) error {
 	h := make(textproto.MIMEHeader)
 	h.Set("Content-Disposition",
 		fmt.Sprintf(`form-data; name="%s"; filename="%s"`,
-			escapeQuotes("file"), escapeQuotes(filepath.Base(path))))
+			escapeQuotes("file"), escapeQuotes(fileName)))
 	h.Set("Content-Type", filetype)
 	part, err := writer.CreatePart(h)
 	if err != nil {
@@ -170,12 +171,35 @@ func SaveResultToDb(path string) error {
 
 	client := &http.Client{}
 	res, err := client.Do(req)
+
 	if err != nil {
 		return err
 	}
 	// fmt.Printf("Response status code: %v\n", res.StatusCode)
 	if res.StatusCode != 200 {
 		return fmt.Errorf("Error saving result to database")
+	}
+
+	endpoint = "http://" + apiHost + "/threshold"
+
+	originalImageName := strings.Replace(fileName, "_mask", "", 1)
+	values := map[string]string{"fileName": originalImageName, "threshold": fmt.Sprintf("%v", usedThreshold)}
+	json_data, err := json.Marshal(values)
+	fmt.Printf("Sending request with %v\n", values)
+
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Post(endpoint, "application/json",
+		bytes.NewBuffer(json_data))
+
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("Error saving threshold to database")
 	}
 	// fmt.Println("res header: %w\n", res.Header)
 	// fmt.Println("Response body: %w\n", res.Body)

@@ -4,16 +4,6 @@ import axios from "axios";
 import { getImageAndMask } from "../Utils/db";
 import { request } from "http";
 
-// Image to base64
-const getBase64 = (file: Blob) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = (error) => reject(error);
-  });
-};
-
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
   let [requestStatus, setRequestStatus] = React.useState("idle");
   const ctxRef = useRef<CanvasRenderingContext2D>();
@@ -23,8 +13,35 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [lineOpacity, setLineOpacity] = useState(100);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   let [endPoint, setEndPoint] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
-  let [pixels, setPixels] = React.useState<{ x: number; y: number }[]>([]);
   let [allowJumps, setAllowJumps] = React.useState(true);
+
+  function blackoutBackground(imageData: ImageData): ImageData {
+    let data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      let a = data[i + 3];
+      if (a === 0) {
+        data[i] = 0;
+        data[i + 1] = 0;
+        data[i + 2] = 0;
+        data[i + 3] = 255;
+      } else {
+        data[i] = 255;
+        data[i + 1] = 255;
+        data[i + 2] = 255;
+      }
+    }
+    return imageData;
+  }
+
+  function canvasToBase64() {
+    const canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    const canvasCtx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    const canvasClone = canvas.cloneNode() as HTMLCanvasElement;
+    const ctx = canvasClone.getContext("2d") as CanvasRenderingContext2D;
+    let mask = blackoutBackground(canvasCtx.getImageData(0, 0, canvas.width, canvas.height));
+    ctx.putImageData(mask, 0, 0);
+    return canvasClone.toDataURL();
+  }
 
   async function sendRequest() {
     if (requestStatus !== "idle") {
@@ -32,8 +49,8 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
       return;
     }
     try {
-      console.log({ pixels });
       setRequestStatus("pending");
+      let mask = canvasToBase64();
       const response = await fetch(`http://${endPoint}`, {
         method: "POST",
         mode: "no-cors",
@@ -43,7 +60,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
         },
         body: JSON.stringify({
           fileName: imageName,
-          pixels: pixels,
+          mask: mask,
           img: imageFile,
           allowJumps: allowJumps,
         }),
@@ -116,7 +133,6 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     ctxRef.current!.beginPath();
     ctxRef.current!.moveTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
 
-    setPixels((prev) => [...prev, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
     setIsDrawing(true);
   };
 
@@ -132,7 +148,6 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     }
     ctxRef.current!.lineTo(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
     console.log("Drawing");
-    setPixels((prev) => [...prev, { x: e.nativeEvent.offsetX, y: e.nativeEvent.offsetY }]);
 
     ctxRef.current!.stroke();
   };
