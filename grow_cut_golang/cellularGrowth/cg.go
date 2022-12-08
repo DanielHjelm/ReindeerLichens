@@ -2,22 +2,30 @@ package cellulargrowth
 
 import (
 	"fmt"
-	"log"
+	"os"
+	"os/exec"
 	"runtime"
 	"sync"
 	"time"
 
 	utils "github.com/DanielHjelm/ReindeerLichens/utils"
-	"github.com/mattn/go-tty"
 )
 
 func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSaveState, allowJumps bool) [][]int {
 
-	tty, err := tty.Open()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer tty.Close()
+	// Listen for ley press events
+	ch := make(chan string)
+	go func(ch chan string) {
+		// disable input buffering
+		exec.Command("stty", "-F", "/dev/tty", "cbreak", "min", "1").Run()
+		// do not display entered characters on the screen
+		exec.Command("stty", "-F", "/dev/tty", "-echo").Run()
+		var b []byte = make([]byte, 1)
+		for {
+			os.Stdin.Read(b)
+			ch <- string(b)
+		}
+	}(ch)
 
 	numProcs := runtime.NumCPU()
 	saveEveryNIterations := 40
@@ -115,14 +123,17 @@ func CellularGrowth(img [][][]uint8, initial_values []map[string]int, shouldSave
 		}
 
 		// Manual stop
-		r, err := tty.ReadRune()
-		if err != nil {
-			fmt.Printf("Error reading tty")
-			break
+		select {
+		case stdin, _ := <-ch:
+			if stdin == "q" {
+				fmt.Printf("\n\n ----  Manual Stop  ----\n\n")
+				done = true
+			}
+
+		default:
+
 		}
-		if string(r) == "q" {
-			done = true
-		}
+
 		labels = utils.CopyArrayInt(labels_next)
 		skipEven = !skipEven
 	}
@@ -139,7 +150,7 @@ func SaveState(img [][][]uint8, labels [][]int, initial_values []map[string]int,
 	mask := utils.CopyArrayInt(labels)
 
 	for i := 0; i < len(initial_values); i++ {
-		x := initial_values[i]["x"]
+		x := initial_values[i]["qx"]
 		y := initial_values[i]["y"]
 		mask[y][x] = -1
 
