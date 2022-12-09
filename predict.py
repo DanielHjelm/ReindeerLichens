@@ -22,10 +22,10 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
 
 
     # Load image
-    image = load_img(path_to_image)
+    og_image = load_img(path_to_image)
 
     # Resize image
-    image = image.resize((image_size, image_size))
+    image = og_image.resize((image_size, image_size))
 
     # Add dimension
     img = np.expand_dims(image, axis=0)
@@ -61,10 +61,13 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
             # Get prediction image
             pred = get_pred(prediction)
 
+        pred = pred.resize((og_image.size[0], og_image.size[1]))
         # Save prediction and image
+        print("Mask size: ", pred.size)
+        print("Image size: ", og_image.size)
         split = path_to_image.split('/')[-1].split('.')
-        pred.save(f"predictions/{split[0]}_mask.{split[1]}")
-        image.save(f"predictions/{path_to_image.split('/')[-1]}")
+        pred.save(f"predictions/{split[0]}_pred_mask.{split[1]}")
+        og_image.save(f"predictions/{split[0]}_pred.{split[1]}")
         print(f"Saved image {path_to_image.split('/')[-1]} and predicted mask")
 
 
