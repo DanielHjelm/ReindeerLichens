@@ -17,7 +17,9 @@ interface Data {
 }
 
 const Home = ({ paths }: { paths: string }) => {
-  let endpoints = JSON.parse(paths);
+  let imagesData = JSON.parse(paths) as Data[];
+  let nStars = imagesData.reduce((acc, curr) => acc + (curr.star ? 1 : 0), 0);
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center py-2">
       <div className="flex flex-col items-center justify-center">
@@ -73,13 +75,14 @@ const Home = ({ paths }: { paths: string }) => {
               vilket betyder att du kan se att någon är inne på en bild som du redan lämnat. (Uppdatera sidan så försvinner det)
             </p>
           </div>
+          <h1 className="mt-5 text-lg font-bold">{`Antal stjärnmarkerade bilder: ${nStars}`}</h1>
         </div>
       </div>
       <div className="flex flex-col justify-start items-start">
         <Head>Paths</Head>
-        {endpoints.length == 0 && <h1>No Images Found</h1>}
-        {endpoints.length > 0 &&
-          endpoints
+        {imagesData.length == 0 && <h1>No Images Found</h1>}
+        {imagesData.length > 0 &&
+          imagesData
             .sort((a: Data, b: Data) => {
               return new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime();
             })
