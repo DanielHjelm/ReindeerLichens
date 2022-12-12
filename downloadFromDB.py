@@ -9,6 +9,9 @@ from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
 
+host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
+request_url = f"https://{host}/images"
+
 
 def downloadFileFromDB(args):
     '''Download file from database'''
@@ -127,9 +130,6 @@ if __name__ == "__main__":
 
     # Url to the API
     # request_url = "https://125a-82-209-142-153.eu.ngrok.io/images"
-    host = os.environ["NEXT_PUBLIC_IMAGES_API_HOST"]
-    request_url = f"https://{host}/images"
-    print(request_url)
 
     # Folder to save images
     outputFolder = "downloaded_images"

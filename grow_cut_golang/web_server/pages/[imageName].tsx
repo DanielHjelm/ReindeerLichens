@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import _Image from "next/image";
-import axios from "axios";
+import axios, { AxiosResponse } from "axios";
 import { getImageAndMask } from "../Utils/db";
-import { request } from "http";
 
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
   let [requestStatus, setRequestStatus] = React.useState("idle");
@@ -14,6 +13,74 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
   let [endPoint, setEndPoint] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
   let [allowJumps, setAllowJumps] = React.useState(true);
+  let [predictionHasBeenMade, setPredictionHasBeenMade] = React.useState(false);
+  let [showPrediction, setShowPrediction] = React.useState(true);
+  let [predictionState, setPredictionState] = React.useState("idle");
+  let [savePredictionRequestStatus, setSavePredictionRequestStatus] = React.useState("idle");
+
+  async function base64ToFile(b64: string): Promise<File> {
+    let blob = await (await fetch(b64)).blob();
+    let fileType = b64.split(";")[0].split(":")[1];
+    let end = imageName.split(".")[1];
+    let _imageName = imageName.split(".")[0] + "_mask." + end;
+    let file = new File([blob], _imageName, { type: fileType });
+
+    return file;
+  }
+
+  async function saveMask() {
+    if (savePredictionRequestStatus !== "idle") {
+      return;
+    }
+    console.log("Saving mask");
+    setSavePredictionRequestStatus("pending");
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    let formdata = new FormData();
+    let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
+    let imageDataCopy = new Uint8Array(imageData.data);
+    let mask = blackoutBackground(imageData);
+    console.log(mask);
+    ctxRef.current!.putImageData(mask, 0, 0);
+
+    let b64 = canvas.toDataURL();
+    let file = await base64ToFile(b64);
+
+    formdata.append("file", file);
+    console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
+    imageData.data.set(imageDataCopy);
+    ctxRef.current!.putImageData(imageData, 0, 0);
+
+    let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    if (res.status == 200) {
+      setSavePredictionRequestStatus("ok");
+      window.location.replace(`/masks/${imageName}`);
+    } else {
+      setSavePredictionRequestStatus("error");
+    }
+    setTimeout(() => {
+      setSavePredictionRequestStatus("idle");
+    }, 5000);
+    console.log(res);
+  }
+
+  function removeBackground(imageData: ImageData): ImageData {
+    let data = imageData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      let r = data[i];
+      let g = data[i + 1];
+      let b = data[i + 2];
+      if (r === 0 && g === 0 && b === 0) {
+        //   console.log("black");
+        data[i + 3] = 0;
+      } else {
+        data[i + 3] = 100;
+        data[i] = 151;
+        data[i + 1] = 31;
+        data[i + 2] = 230;
+      }
+    }
+    return imageData;
+  }
 
   function blackoutBackground(imageData: ImageData): ImageData {
     let data = imageData.data;
@@ -39,6 +106,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     const canvasClone = canvas.cloneNode() as HTMLCanvasElement;
     const ctx = canvasClone.getContext("2d") as CanvasRenderingContext2D;
     let mask = blackoutBackground(canvasCtx.getImageData(0, 0, canvas.width, canvas.height));
+
     ctx.putImageData(mask, 0, 0);
     return canvasClone.toDataURL();
   }
@@ -56,7 +124,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
         mode: "no-cors",
         headers: {
           "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Origin": "*", // Required for CORS support to work
         },
         body: JSON.stringify({
           fileName: imageName,
@@ -90,6 +158,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   useEffect(() => {
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
     handleUserVisibilityChange();
+
     const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -152,8 +221,8 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     ctxRef.current!.stroke();
   };
 
-  function getRequestStatusSymbol() {
-    switch (requestStatus) {
+  function getRequestStatusSymbol(status: string) {
+    switch (status) {
       case "ok":
         return (
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 text-white">
@@ -213,9 +282,25 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
         width={imageSize.width}
         className="absolute z-10 cursor-crosshair"
         id="canvas"
-        onMouseDown={startDrawing}
-        onMouseUp={endDrawing}
-        onMouseMove={draw}
+        onMouseDown={(e) => {
+          if (predictionHasBeenMade) {
+            return;
+          }
+          startDrawing(e);
+        }}
+        onMouseUp={(e) => {
+          if (predictionHasBeenMade) {
+            return;
+          }
+          endDrawing();
+        }}
+        onMouseMove={(e) => {
+          if (predictionHasBeenMade) {
+            return;
+          }
+          draw(e);
+        }}
+        hidden={predictionHasBeenMade && !showPrediction}
       ></canvas>
       <img src={imageFile} alt="" />
 
@@ -248,8 +333,108 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
           className=" max-h-[4rem] max-w-[10rem] right-10 bottom-10 z-20 bg-blue-700 border rounded py-2 px-6 text-white font-bold border-black cursor-pointer"
           onClick={sendRequest}
         >
-          {requestStatus == "idle" ? <h1>Send</h1> : getRequestStatusSymbol()}
+          {requestStatus == "idle" ? <h1>Send</h1> : getRequestStatusSymbol(requestStatus)}
         </div>
+
+        <div
+          className="px-4 py-2 bg-cyan-700 rounded mt-4 max-w-[10rem] border shadow cursor-pointer min-h-[2rem]"
+          onClick={async () => {
+            if (predictionState !== "idle") {
+              return;
+            }
+
+            setPredictionState("pending");
+            let response: AxiosResponse<any, any>;
+            try {
+              response = await axios(`http://127.0.0.1:8001/predict/${imageName}`, {
+                method: "GET",
+                headers: {
+                  "Allow-Control-Allow-Origin": "*",
+                },
+
+                validateStatus: (status) => status < 500,
+                timeout: 15000,
+              });
+            } catch (error) {
+              setPredictionState("error");
+              alert("Error sending prediction request\n\n Have you started the python prediction server located at ReindeerLichens/ (?)");
+              setTimeout(() => {
+                setPredictionState("idle");
+              }, 1000);
+              return;
+            }
+            if (response!.status !== 200) {
+              setPredictionState("error");
+              setTimeout(() => {
+                setPredictionState("idle");
+              }, 1000);
+              return;
+            }
+
+            let body = response.data;
+            let predictionB64 = body["prediction"];
+
+            // Print prediction to canvas
+            let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+            let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+            let img = new Image();
+            let fileType = encodeURIComponent(imageName).split(".")[1];
+            if (fileType === "jpg") {
+              fileType = "jpeg";
+            } else {
+              fileType = "png";
+            }
+            img.src = `data:image/${fileType};base64,${predictionB64}`;
+            img.onload = () => {
+              ctx.drawImage(img, 0, 0);
+              let data = removeBackground(ctx.getImageData(0, 0, canvas.width, canvas.height));
+              ctx.putImageData(data, 0, 0);
+            };
+            setPredictionState("ok");
+            setPredictionHasBeenMade(true);
+
+            setTimeout(() => {
+              setPredictionState("idle");
+            }, 1000);
+          }}
+        >
+          {predictionState == "idle" ? (
+            predictionHasBeenMade ? (
+              <p>Remake prediction</p>
+            ) : (
+              <p className="text-white font-bold">Predict with model</p>
+            )
+          ) : (
+            getRequestStatusSymbol(predictionState)
+          )}
+        </div>
+        {predictionHasBeenMade && (
+          <div>
+            <div className="flex py-4">
+              <label className="inline-flex relative items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  value=""
+                  className="sr-only peer"
+                  onClick={(e) => {
+                    setShowPrediction(e.currentTarget.checked);
+                  }}
+                  defaultChecked={showPrediction}
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Show mask</span>
+              </label>
+            </div>
+            <div
+              className="flex px-4 py-2 cursor-pointer shadow rounded bg-green-400"
+              onClick={() => {
+                saveMask();
+              }}
+            >
+              {savePredictionRequestStatus === "idle" ? <p>Save and go to mask</p> : getRequestStatusSymbol(savePredictionRequestStatus)}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -257,7 +442,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 
 export async function getStaticProps(context: any) {
   const imageName = context.params.imageName;
-
+  console.log(imageName);
   let imageAndMask = await getImageAndMask(imageName);
 
   if (imageAndMask.notFound) {
