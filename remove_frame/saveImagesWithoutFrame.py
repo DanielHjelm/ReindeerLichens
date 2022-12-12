@@ -23,7 +23,7 @@ def saveImagesWithoutFrame(path_to_images, path_to_save_folder, number_of_images
 
 
 if __name__ == "__main__":
-    path_to_images = '../../imagesToDB'
+    path_to_images = '../../removeImgFrame'
     path_to_save_folder = 'withoutFrame'
     number_of_images_to_save = 1000
     saveImagesWithoutFrame(path_to_images, path_to_save_folder, number_of_images_to_save)
