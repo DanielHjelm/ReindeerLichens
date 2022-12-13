@@ -119,7 +119,36 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       setImageSize({ width: img.width, height: img.height });
     };
     window.addEventListener("beforeunload", NotifyUserClickedBack);
+    window.addEventListener("keydown", (e) => {
+      let key = e.key;
+      switch (key) {
+        case "s":
+          saveChanges();
+          break;
+        case "m":
+          setShowMask((prev) => !prev);
 
+          break;
+        case "Escape":
+          resetCanvas();
+
+          break;
+        case "+":
+          setLineWidth((prev) => prev + 5);
+          break;
+        case "-":
+          setLineWidth((prev) => {
+            let step = 5;
+            if (prev - step <= 0) {
+              return step;
+            }
+            return prev - step;
+          });
+        default:
+          // console.log("key", key);
+          break;
+      }
+    });
     window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
     if (mask !== "") {
@@ -284,7 +313,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
     let imageDataCopy = new Uint8Array(imageData.data);
     let mask = blackoutBackground(imageData);
-    console.log(mask);
     ctxRef.current!.putImageData(mask, 0, 0);
 
     let b64 = canvas.toDataURL();
@@ -295,7 +323,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     imageData.data.set(imageDataCopy);
     ctxRef.current!.putImageData(imageData, 0, 0);
 
-    let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setRequestStatus("ok");
     } else {
@@ -361,7 +389,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       star: !starred,
     };
     console.log({ payload });
-    let response = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/star`, payload, { validateStatus: (status) => status < 500 });
+    let response = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/star`, payload, { validateStatus: (status) => status < 500 });
     if (response.status == 200) {
       setMaskInformationRequestStatus("ok");
       setStarred(!starred);
@@ -373,7 +401,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       setMaskInformationRequestStatus("idle");
     }, 1000);
   }
-
+  if (ctxRef.current) {
+    ctxRef.current.lineWidth = lineWidth;
+  }
   return (
     <div className={`relative w-[${imageSize.width}px] h-[${imageSize.height}px]`}>
       <style jsx global>{`
@@ -396,7 +426,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       ></canvas>
 
       <img className="" height={imageSize.height} width={imageSize.width} src={image} alt="image" />
-      <div className="fixed top-1/2 left-[5rem] bg-white rounded p-4">
+      <div className="fixed top-1/2 left-[5rem] bg-white rounded p-4" onDrag={(e) => {}}>
         <div className="flex space-x-1 mb-4">
           <p className="text-sm">Star this image (Good enough for ML)</p>
           <div onClick={() => handleSaveStar()} className="cursor-pointer w-6 h-6">
@@ -405,16 +435,16 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         </div>
         <div>
           <label className="inline-flex relative items-center cursor-pointer">
-            <input type="checkbox" value="" className="sr-only peer" onClick={() => setShowMask((prev) => !prev)} />
+            <input type="checkbox" value="" className="sr-only peer" checked={!showMask} onChange={(e) => setShowMask(!e.target.checked)} />
             <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Hide mask</span>
+            <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-500">Hide mask (m)</span>
           </label>
         </div>
 
         {showMask && (
           <div>
             <div>
-              <p>Set lineWidth</p>
+              <p>Set lineWidth (+/-)</p>
               <input
                 className="border rounded max-w-[3rem] px-2"
                 type="text"
@@ -435,16 +465,15 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
               {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
             </div>
             <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
-              Reset
+              Reset (Escape)
             </div>
             <div id="allow-jump-switch" hidden={true}>
               <label className="inline-flex relative items-center cursor-pointer">
                 <input
                   type="checkbox"
-                  value=""
+                  checked={allowJump}
                   className="sr-only peer"
-                  defaultChecked={allowJump}
-                  onClick={(e) => {
+                  onChange={(e) => {
                     setAllowJump(e.currentTarget.checked);
                   }}
                 />
@@ -499,7 +528,7 @@ export async function getStaticProps(context: any) {
 }
 
 export async function getStaticPaths() {
-  let res = await axios.get(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
+  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
   if (res.status !== 200) {
     return {
       notFound: true,

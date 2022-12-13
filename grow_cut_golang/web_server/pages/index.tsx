@@ -187,7 +187,7 @@ function UnStarredIcon() {
 
 export async function getServerSideProps() {
   console.log("getServerSideProps in pages/index.tsx");
-  let res = await axios.get(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`, {
+  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`, {
     validateStatus: (status) => status < 500,
   });
 

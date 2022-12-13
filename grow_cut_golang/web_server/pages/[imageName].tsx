@@ -50,7 +50,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     imageData.data.set(imageDataCopy);
     ctxRef.current!.putImageData(imageData, 0, 0);
 
-    let res = await axios.post(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setSavePredictionRequestStatus("ok");
       window.location.replace(`/masks/${imageName}`);
