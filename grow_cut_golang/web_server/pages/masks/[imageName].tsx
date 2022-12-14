@@ -13,7 +13,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [showMask, setShowMask] = React.useState(true);
   let [starred, setStarred] = React.useState(false);
   let [allowJump, setAllowJump] = React.useState(false);
-  let [toggleAdd, setToggleAdd] = React.useState(false);
+  let toggleAdd = false;
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
@@ -116,6 +116,22 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         let saveButton = document.getElementById("saveButton") as HTMLDivElement;
         saveButton.click();
         break;
+      case "a":
+        let addBtn = document.getElementById("add-btn") as HTMLDivElement;
+        let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+        let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+        if (!toggleAdd) {
+          addBtn.style.color = "green";
+          addBtn.style.backgroundColor = "#60A5FA55";
+          ctx.strokeStyle = "red";
+        } else {
+          addBtn.style.color = "black";
+          ctx.strokeStyle = "black";
+          addBtn.style.backgroundColor = "white";
+        }
+        toggleAdd = !toggleAdd;
+
+        break;
       case "m":
         setShowMask((prev) => !prev);
 
@@ -192,7 +208,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let allowJumpSwitch = document.getElementById("allow-jump-switch") as HTMLInputElement;
     if (allowJumpSwitch) allowJumpSwitch.hidden = true;
     let addText = document.getElementById("add-text")!;
-    addText.innerText = "Add";
+    addText.innerText = "Add (s)";
     addBtn.style.backgroundColor = "white";
     addBtn.style.color = "#61A5FB";
     addBtn.style.borderColor = "#61A5FB";
@@ -308,14 +324,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let file = new File([blob], _fileName, { type: fileType });
 
     return file;
-  }
-
-  function handleToggleAdd() {
-    if (toggleAdd) {
-      setToggleAdd(false);
-      let addBtn = document.getElementById("add-btn") as HTMLDivElement;
-      addBtn.style.color = "green";
-    }
   }
 
   async function saveChanges() {
@@ -478,7 +486,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
               />
             </div>
             <div id="saveButton" className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
-              {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
+              {requestStatus === "idle" ? <p>Save (s)</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
             </div>
             <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
               Reset (Escape)
@@ -502,7 +510,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
               </div>
             </div>
             <div id="add-btn" className="m-4 px-4 py-1 border-blue-400 border-2  text-blue-400 rounded cursor-pointer text-center" onClick={HandleAddToMask}>
-              {updateRequestStatus === "idle" ? <p id="add-text">Add</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
+              {updateRequestStatus === "idle" ? <p id="add-text">Add (a)</p> : <div className="mx-auto">{getRequestStatusSymbol(updateRequestStatus)}</div>}
             </div>
           </div>
         )}
