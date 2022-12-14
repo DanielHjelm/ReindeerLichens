@@ -12,11 +12,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ message: "Missing fileName" });
   }
 
-  let starReq = axios(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/star?fileName=${encodeURIComponent(fileName as string)}`, {
+  let starReq = axios(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/star?fileName=${encodeURIComponent(fileName as string)}`, {
     method: "GET",
   });
 
-  let thresholdReq = axios(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/threshold?fileName=${encodeURIComponent(fileName as string)}`, {
+  let thresholdReq = axios(`https://${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/threshold?fileName=${encodeURIComponent(fileName as string)}`, {
     method: "GET",
   });
 

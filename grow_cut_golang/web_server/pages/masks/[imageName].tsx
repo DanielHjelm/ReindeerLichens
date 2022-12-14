@@ -13,6 +13,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [showMask, setShowMask] = React.useState(true);
   let [starred, setStarred] = React.useState(false);
   let [allowJump, setAllowJump] = React.useState(false);
+  let [toggleAdd, setToggleAdd] = React.useState(false);
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
   //   let [isDrawing, setIsDrawing] = React.useState(false);
@@ -309,6 +310,14 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     return file;
   }
 
+  function handleToggleAdd() {
+    if (toggleAdd) {
+      setToggleAdd(false);
+      let addBtn = document.getElementById("add-btn") as HTMLDivElement;
+      addBtn.style.color = "green";
+    }
+  }
+
   async function saveChanges() {
     if (requestStatus === "pending") {
       return;
@@ -395,7 +404,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       star: !starred,
     };
     console.log({ payload });
-    let response = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/star`, payload, { validateStatus: (status) => status < 500 });
+    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes(":8000") ? "http" : "https";
+    let response = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/star`, payload, { validateStatus: (status) => status < 500 });
     if (response.status == 200) {
       setMaskInformationRequestStatus("ok");
       setStarred(!starred);
