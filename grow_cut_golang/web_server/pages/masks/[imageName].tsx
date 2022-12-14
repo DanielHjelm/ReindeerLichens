@@ -114,6 +114,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     switch (key) {
       case "s":
         let saveButton = document.getElementById("saveButton") as HTMLDivElement;
+        if (!saveButton) {
+          return;
+        }
         saveButton.click();
         break;
       case "a":
@@ -141,12 +144,20 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
         break;
       case "+":
-        setLineWidth((prev) => prev + 5);
+        setLineWidth((prev) => {
+          if (prev < 5) {
+            return prev + 1;
+          }
+          return prev + 5;
+        });
         break;
       case "-":
         setLineWidth((prev) => {
           let step = 5;
           if (prev - step <= 0) {
+            if (prev - 1 > 0) {
+              return prev - 1;
+            }
             return step;
           }
           return prev - step;
@@ -215,7 +226,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     msk.src = mask;
     ctxRef.current!.lineWidth = lineWidth;
     ctxRef.current!.lineCap = "round";
-    ctxRef.current!.strokeStyle = "black";
     msk.onload = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(msk, 0, 0);

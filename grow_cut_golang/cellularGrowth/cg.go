@@ -13,8 +13,6 @@ import (
 
 func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState, allowJumps bool, threshold float64) [][]int {
 
-	utils.SaveImage("test.jpg", utils.ArrayToImage(initial_values))
-
 	// Listen for key press events
 	ch := make(chan string)
 	go func(ch chan string) {
@@ -41,15 +39,16 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 	for y := 0; y < len(initial_values); y++ {
 		for x := 0; x < len(initial_values[0]); x++ {
 			r, g, b := initial_values[y][x][0], initial_values[y][x][1], initial_values[y][x][2]
-			if r == 0 && g == 0 && b == 0 {
+			if r < 50 && g < 50 && b < 50 {
 				labels[y][x] = 0 // background
 			} else {
 				labels[y][x] = 1 // foreground
 			}
 		}
 	}
+	utils.SaveMask(labels, "initial_mask.jpg")
 
-	labels_next := utils.CreateArrayInt(len(img), len(img[0]))
+	labels_next := utils.CopyArrayInt(labels)
 
 	assigned := 0
 	done := false
