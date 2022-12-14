@@ -20,11 +20,12 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
   function removeBackground(imageData: ImageData): ImageData {
     let data = imageData.data;
+
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i];
       let g = data[i + 1];
       let b = data[i + 2];
-      if (r === 0 && g === 0 && b === 0) {
+      if (r < 50 && g < 50 && b < 50) {
         //   console.log("black");
         data[i + 3] = 0;
       } else {
@@ -68,7 +69,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   async function getMaskInformation() {
     setMaskInformationRequestStatus("pending");
 
-    let response = await fetch(`http://localhost:3000/api/maskInfo?fileName=${encodeURIComponent(fileName)}`, {
+    let response = await fetch(`/api/maskInfo?fileName=${encodeURIComponent(fileName)}`, {
       method: "GET",
       mode: "no-cors",
       headers: {
@@ -163,10 +164,10 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       ctxRef.current.strokeStyle = "black";
       msk.onload = () => {
         ctx.drawImage(msk, 0, 0);
-        const imageData = ctx.getImageData(0, 0, msk.width, msk.height);
-        let mask = removeBackground(imageData);
+        let imageData = ctx.getImageData(0, 0, msk.width, msk.height);
+        imageData = removeBackground(imageData);
 
-        ctx.putImageData(mask, 0, 0);
+        ctx.putImageData(imageData, 0, 0);
 
         setMaskSize({ width: msk.width, height: msk.height });
       };
@@ -327,7 +328,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
-    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("localhost") ? "http" : "https";
+    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes(":8000") ? "http" : "https";
     let res = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setRequestStatus("ok");

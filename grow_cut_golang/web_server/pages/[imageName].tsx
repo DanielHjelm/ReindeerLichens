@@ -70,7 +70,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
       let r = data[i];
       let g = data[i + 1];
       let b = data[i + 2];
-      if (r === 0 && g === 0 && b === 0) {
+      if (r < 100 && g < 100 && b < 100) {
         //   console.log("black");
         data[i + 3] = 0;
       } else {
