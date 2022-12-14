@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import _Image from "next/image";
 import axios, { AxiosResponse } from "axios";
 import { getImageAndMask } from "../Utils/db";
+import { useRouter } from "next/router";
 
 export default function imageName({ imageName, imageFile }: { imageName: string; imageFile: string }) {
   let [requestStatus, setRequestStatus] = React.useState("idle");
@@ -17,6 +18,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   let [showPrediction, setShowPrediction] = React.useState(true);
   let [predictionState, setPredictionState] = React.useState("idle");
   let [savePredictionRequestStatus, setSavePredictionRequestStatus] = React.useState("idle");
+  let router = useRouter();
 
   async function base64ToFile(b64: string): Promise<File> {
     let blob = await (await fetch(b64)).blob();
@@ -28,39 +30,38 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     return file;
   }
 
-  async function saveMask() {
-    if (savePredictionRequestStatus !== "idle") {
+  async function saveChanges(): Promise<boolean | undefined> {
+    if (savePredictionRequestStatus === "pending") {
       return;
     }
-    console.log("Saving mask");
     setSavePredictionRequestStatus("pending");
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let formdata = new FormData();
-    let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
+    let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
     let imageDataCopy = new Uint8Array(imageData.data);
-    let mask = blackoutBackground(imageData);
-    console.log(mask);
-    ctxRef.current!.putImageData(mask, 0, 0);
-
-    let b64 = canvas.toDataURL();
+    let _mask = blackoutBackground(imageData);
+    ctx.putImageData(_mask, 0, 0);
+    let fileType = imageName.split(".")[1].toLowerCase() == "jpg" ? "image/jpeg" : "image/png";
+    let b64 = canvas.toDataURL(fileType);
     let file = await base64ToFile(b64);
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     imageData.data.set(imageDataCopy);
-    ctxRef.current!.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
 
-    let res = await axios.post(`${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
-    if (res.status == 200) {
-      setSavePredictionRequestStatus("ok");
-      window.location.replace(`/masks/${imageName}`);
-    } else {
-      setSavePredictionRequestStatus("error");
-    }
+    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     setTimeout(() => {
       setSavePredictionRequestStatus("idle");
     }, 5000);
-    console.log(res);
+    if (res.status == 200) {
+      setSavePredictionRequestStatus("ok");
+      return true;
+    } else {
+      setSavePredictionRequestStatus("error");
+      return false;
+    }
   }
 
   function removeBackground(imageData: ImageData): ImageData {
@@ -428,7 +429,11 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
             <div
               className="flex px-4 py-2 cursor-pointer shadow rounded bg-green-400"
               onClick={() => {
-                saveMask();
+                saveChanges().then((res) => {
+                  if (res !== undefined && res === true) {
+                    router.push(`/masks/${imageName}`);
+                  }
+                });
               }}
             >
               {savePredictionRequestStatus === "idle" ? <p>Save and go to mask</p> : getRequestStatusSymbol(savePredictionRequestStatus)}
