@@ -50,7 +50,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     imageData.data.set(imageDataCopy);
     ctx.putImageData(imageData, 0, 0);
-    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("localhost") ? "http" : "https";
+    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("127") ? "http" : "https";
     let res = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     setTimeout(() => {
       setSavePredictionRequestStatus("idle");
@@ -355,7 +355,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
                 },
 
                 validateStatus: (status) => status < 500,
-                timeout: 15000,
+                timeout: 20000,
               });
             } catch (error) {
               setPredictionState("error");
@@ -498,7 +498,9 @@ export async function getStaticProps(context: any) {
 // }
 
 export async function getStaticPaths() {
-  let res = await axios.get(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
+  let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("127") ? "http" : "https";
+
+  let res = await axios.get(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? "localhost"}/images`);
 
   if (res.status !== 200) {
     return {

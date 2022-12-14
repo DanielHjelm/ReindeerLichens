@@ -3,7 +3,6 @@ import { getImageAndMask } from "../../Utils/db";
 import axios from "axios";
 
 export default function Mask({ mask, image, fileName }: { mask: string; image: string; fileName: string }) {
-  let [maskData, setMaskData] = React.useState(mask);
   let [imageSize, setImageSize] = React.useState({ width: 0, height: 0 });
   let [maskSize, setMaskSize] = React.useState({ width: 0, height: 0 });
   let [lineWidth, setLineWidth] = React.useState(20);
@@ -156,9 +155,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     window.addEventListener("keydown", (e) => handleKeyPress(e));
     window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
-    if (maskData !== "") {
+    if (mask !== "") {
       const msk = new Image();
-      msk.src = maskData;
+      msk.src = mask;
       ctxRef.current.lineWidth = lineWidth;
       ctxRef.current.lineCap = "round";
       ctxRef.current.strokeStyle = "black";
@@ -195,7 +194,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     addBtn.style.backgroundColor = "white";
     addBtn.style.color = "#61A5FB";
     addBtn.style.borderColor = "#61A5FB";
-    msk.src = maskData;
+    msk.src = mask;
     ctxRef.current!.lineWidth = lineWidth;
     ctxRef.current!.lineCap = "round";
     ctxRef.current!.strokeStyle = "black";
@@ -318,22 +317,20 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let formdata = new FormData();
     let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
-    let imageDataCopy = new Uint8Array(imageData.data);
-    let _mask = blackoutBackground(imageData);
-    ctx.putImageData(_mask, 0, 0);
+    imageData = blackoutBackground(imageData);
+    ctx.putImageData(imageData, 0, 0);
     let fileType = fileName.split(".")[1].toLowerCase() == "jpg" ? "image/jpeg" : "image/png";
     let b64 = canvas.toDataURL(fileType);
     let file = await base64ToFile(b64);
+    imageData = removeBackground(imageData);
+    ctx.putImageData(imageData, 0, 0);
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
-    imageData.data.set(imageDataCopy);
-    ctx.putImageData(imageData, 0, 0);
     let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("localhost") ? "http" : "https";
     let res = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setRequestStatus("ok");
-      setMaskData(b64);
     } else {
       setRequestStatus("error");
     }
