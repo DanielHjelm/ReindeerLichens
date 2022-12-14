@@ -329,8 +329,8 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     imageData.data.set(imageDataCopy);
     ctx.putImageData(imageData, 0, 0);
-
-    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("localhost") ? "http" : "https";
+    let res = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setRequestStatus("ok");
       setMaskData(b64);

@@ -50,8 +50,8 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     imageData.data.set(imageDataCopy);
     ctx.putImageData(imageData, 0, 0);
-
-    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    let schema = process.env.NEXT_PUBLIC_IMAGES_API_HOST?.includes("localhost") ? "http" : "https";
+    let res = await axios.post(`${schema}://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     setTimeout(() => {
       setSavePredictionRequestStatus("idle");
     }, 5000);
@@ -349,6 +349,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
             try {
               response = await axios(`http://${process.env.NEXT_PUBLIC_PREDICTION_API_HOST}/predict/${imageName}`, {
                 method: "GET",
+
                 headers: {
                   "Allow-Control-Allow-Origin": "*",
                 },
@@ -358,7 +359,10 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
               });
             } catch (error) {
               setPredictionState("error");
-              alert("Error sending prediction request\n\n Have you started the python prediction server located at ReindeerLichens/ (?)");
+              alert(
+                "Error sending prediction request, check console for reason\n\n Have you started the python prediction server located at ReindeerLichens/ (?)\nHave you checked the NEXT_PUBLIC_PREDICTION_API_HOST in .env.local?"
+              );
+              console.log(error);
               setTimeout(() => {
                 setPredictionState("idle");
               }, 1000);
