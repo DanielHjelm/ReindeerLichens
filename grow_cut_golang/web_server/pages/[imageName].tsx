@@ -11,7 +11,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
   const [lineColor, setLineColor] = useState("red");
   const [lineOpacity, setLineOpacity] = useState(100);
   const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  let [endPoint, setEndPoint] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
+  let [url, setUrl] = React.useState(process.env.NEXT_PUBLIC_GOLANG_HOST + "/start");
   let [allowJumps, setAllowJumps] = React.useState(true);
   let [predictionHasBeenMade, setPredictionHasBeenMade] = React.useState(false);
   let [showPrediction, setShowPrediction] = React.useState(true);
@@ -50,7 +50,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     imageData.data.set(imageDataCopy);
     ctxRef.current!.putImageData(imageData, 0, 0);
 
-    let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
+    let res = await axios.post(`${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setSavePredictionRequestStatus("ok");
       window.location.replace(`/masks/${imageName}`);
@@ -119,7 +119,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     try {
       setRequestStatus("pending");
       let mask = canvasToBase64();
-      const response = await fetch(`http://${endPoint}`, {
+      const response = await fetch(`http://${url}`, {
         method: "POST",
         mode: "no-cors",
         headers: {
@@ -308,10 +308,10 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
         <input
           type="text"
           placeholder="Enter Endpoint"
-          defaultValue={endPoint}
+          defaultValue={url}
           className="mb-4 rounded border border-gray-300 p-2"
           onChange={(e) => {
-            setEndPoint(e.target.value);
+            setUrl(e.target.value);
           }}
         />
         <div>
@@ -346,7 +346,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
             setPredictionState("pending");
             let response: AxiosResponse<any, any>;
             try {
-              response = await axios(`http://127.0.0.1:8001/predict/${imageName}`, {
+              response = await axios(`http://${process.env.NEXT_PUBLIC_PREDICTION_API_HOST}/predict/${imageName}`, {
                 method: "GET",
                 headers: {
                   "Allow-Control-Allow-Origin": "*",

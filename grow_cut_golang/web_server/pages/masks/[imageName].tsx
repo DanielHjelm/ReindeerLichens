@@ -3,6 +3,7 @@ import { getImageAndMask } from "../../Utils/db";
 import axios from "axios";
 
 export default function Mask({ mask, image, fileName }: { mask: string; image: string; fileName: string }) {
+  let [maskData, setMaskData] = React.useState(mask);
   let [imageSize, setImageSize] = React.useState({ width: 0, height: 0 });
   let [maskSize, setMaskSize] = React.useState({ width: 0, height: 0 });
   let [lineWidth, setLineWidth] = React.useState(20);
@@ -107,6 +108,39 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     axios.post("/api/isViewed", { fileName: fileName, isViewed: false }, { validateStatus: (status) => status < 500 });
   }
 
+  function handleKeyPress(e: KeyboardEvent) {
+    let key = e.key;
+    switch (key) {
+      case "s":
+        let saveButton = document.getElementById("saveButton") as HTMLDivElement;
+        saveButton.click();
+        break;
+      case "m":
+        setShowMask((prev) => !prev);
+
+        break;
+      case "Escape":
+        resetCanvas();
+
+        break;
+      case "+":
+        setLineWidth((prev) => prev + 5);
+        break;
+      case "-":
+        setLineWidth((prev) => {
+          let step = 5;
+          if (prev - step <= 0) {
+            return step;
+          }
+          return prev - step;
+        });
+        break;
+
+      default:
+        break;
+    }
+  }
+
   useEffect(() => {
     getMaskInformation();
     handleUserVisibilityChange();
@@ -119,41 +153,12 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
       setImageSize({ width: img.width, height: img.height });
     };
     window.addEventListener("beforeunload", NotifyUserClickedBack);
-    window.addEventListener("keydown", (e) => {
-      let key = e.key;
-      switch (key) {
-        case "s":
-          saveChanges();
-          break;
-        case "m":
-          setShowMask((prev) => !prev);
-
-          break;
-        case "Escape":
-          resetCanvas();
-
-          break;
-        case "+":
-          setLineWidth((prev) => prev + 5);
-          break;
-        case "-":
-          setLineWidth((prev) => {
-            let step = 5;
-            if (prev - step <= 0) {
-              return step;
-            }
-            return prev - step;
-          });
-        default:
-          // console.log("key", key);
-          break;
-      }
-    });
+    window.addEventListener("keydown", (e) => handleKeyPress(e));
     window.addEventListener("visibilitychange", handleUserVisibilityChange);
 
-    if (mask !== "") {
+    if (maskData !== "") {
       const msk = new Image();
-      msk.src = mask;
+      msk.src = maskData;
       ctxRef.current.lineWidth = lineWidth;
       ctxRef.current.lineCap = "round";
       ctxRef.current.strokeStyle = "black";
@@ -171,6 +176,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
     return () => {
       window.removeEventListener("beforeunload", NotifyUserClickedBack);
+      window.removeEventListener("keydown", (e) => handleKeyPress(e));
 
       window.removeEventListener("visibilitychange", handleUserVisibilityChange);
     };
@@ -189,7 +195,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     addBtn.style.backgroundColor = "white";
     addBtn.style.color = "#61A5FB";
     addBtn.style.borderColor = "#61A5FB";
-    msk.src = mask;
+    msk.src = maskData;
     ctxRef.current!.lineWidth = lineWidth;
     ctxRef.current!.lineCap = "round";
     ctxRef.current!.strokeStyle = "black";
@@ -309,23 +315,25 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     }
     setRequestStatus("pending");
     let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
     let formdata = new FormData();
-    let imageData = ctxRef.current!.getImageData(0, 0, imageSize.width, imageSize.height);
+    let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
     let imageDataCopy = new Uint8Array(imageData.data);
-    let mask = blackoutBackground(imageData);
-    ctxRef.current!.putImageData(mask, 0, 0);
-
-    let b64 = canvas.toDataURL();
+    let _mask = blackoutBackground(imageData);
+    ctx.putImageData(_mask, 0, 0);
+    let fileType = fileName.split(".")[1].toLowerCase() == "jpg" ? "image/jpeg" : "image/png";
+    let b64 = canvas.toDataURL(fileType);
     let file = await base64ToFile(b64);
 
     formdata.append("file", file);
     console.log(`Sending request to ${process.env.NEXT_PUBLIC_IMAGES_API_HOST}/images`);
     imageData.data.set(imageDataCopy);
-    ctxRef.current!.putImageData(imageData, 0, 0);
+    ctx.putImageData(imageData, 0, 0);
 
     let res = await axios.post(`http://${process.env.NEXT_PUBLIC_IMAGES_API_HOST ?? ""}/images`, formdata);
     if (res.status == 200) {
       setRequestStatus("ok");
+      setMaskData(b64);
     } else {
       setRequestStatus("error");
     }
@@ -461,7 +469,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
                 }}
               />
             </div>
-            <div className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
+            <div id="saveButton" className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
               {requestStatus === "idle" ? <p>Save</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
             </div>
             <div className="m-4 px-4 py-1 bg-blue-400 text-white rounded cursor-pointer justify-center items-center text-center" onClick={resetCanvas}>
