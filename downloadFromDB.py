@@ -8,9 +8,11 @@ import time
 from multiprocessing import cpu_count
 from multiprocessing.pool import ThreadPool
 from datetime import datetime, timedelta
-
+from dotenv import load_dotenv
+load_dotenv("grow_cut_golang/web_server/.env.local")
 host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
-request_url = f"https://{host}/images"
+schema = "http" if ":8000" in host else "https"
+request_url = f"{schema}://{host}/images"
 
 
 def downloadFileFromDB(args):
@@ -124,9 +126,6 @@ def downloadFromDB(request_url, outputFolder, onlyLast24Hour=False):
 
 
 if __name__ == "__main__":
-
-    from dotenv import load_dotenv
-    load_dotenv("grow_cut_golang/web_server/.env.local")
 
     # Url to the API
     # request_url = "https://125a-82-209-142-153.eu.ngrok.io/images"
