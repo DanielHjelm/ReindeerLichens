@@ -94,7 +94,7 @@ def augment_images(path_to_folder):
     for folder in os.listdir(path_to_folder):
         if "DS_Store" not in folder:
             for image in os.listdir(os.path.join(path_to_folder, folder)):
-                if "DS_Store" in image:
+                if "DS_Store" and "augmented" in image:
                     continue
                 if "mask" in image:
                     mask_name = image.split(".")[0]
@@ -102,16 +102,12 @@ def augment_images(path_to_folder):
                 else:
                     image_name = image.split(".")[0]
                     image_path = os.path.join(path_to_folder, folder, image)
-            # print(f'Image name: {image.split(".")[0]}')
-            # Read image and masks
-            # print(image_name)
-            # print(mask_name)
+         
             print("-------------")
+
+            # Read image and masks
             image = imageio.imread(image_path)
             mask = imageio.imread(mask_path)
-
-            
-
 
             # Create ImageAugmenter object
             image_augmenter = ImageAugmenter(image, mask)
@@ -123,7 +119,7 @@ def augment_images(path_to_folder):
             for i, (image, mask) in enumerate(gen):
                 plt.imsave(path_to_folder + "/" + folder + "/" + image_name + '_augmented' + f'_{i+1}' + "." + image_path.split('.')[-1], image)
                 plt.imsave(path_to_folder + "/" + folder + "/" + mask_name + '_augmented' + f'_{i+1}' + "." + mask_path.split('.')[-1], mask)
-                print(f'Image and mask saved to: {path_to_folder + "/" + folder}')
+                print(f'Augmented image and mask saved to: {path_to_folder + "/" + folder}')
 
 
 
@@ -131,7 +127,7 @@ def augment_images(path_to_folder):
 if __name__ == '__main__':
 
     # Path to folder with images and masks
-    path_to_folder = '/Users/daniel/Desktop/downloaded_images'
+    path_to_folder = '/Users/daniel/Desktop/ReindeerLichens/downloaded_images'
 
     # Augment images and masks
     augment_images(path_to_folder)
