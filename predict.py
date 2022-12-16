@@ -37,48 +37,48 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
     img = np.squeeze(img)
     prediction = np.squeeze(prediction)
 
+    # Get prediction image
+    pred = get_pred(prediction)
+
+    # Resize prediction
+    pred = pred.resize((og_image.size[0], og_image.size[1]))
+
+    # Convert to binary
+    pred = pred.point(lambda x: 255 if x > 30 else 0)
+        
     if plot:
 
-        # Get prediction image
-        pred = get_pred(prediction)
         
         # Find indices of non-zero pixels
         pred_array = np.array(pred)
         idx = np.nonzero(pred_array)
 
         # Create overlay image
-        overlayColor = Image.new(mode="RGB", size=(image_size, image_size), color=(144,0,211))
-        overlay = img.copy()
-        overlay[idx] = 0.6*img[idx] + 0.4*np.array(overlayColor)[idx]
+        overlayColor = Image.new(mode="RGB", size=(og_image.size[0], og_image.size[1]), color=(144,0,211))
+        overlay = np.array(og_image).copy()
+        overlay[idx] = 0.6*np.array(og_image)[idx] + 0.4*np.array(overlayColor)[idx]
 
         plt.imshow(overlay)
         plt.title(f"Prediction on image {path_to_image.split('/')[-1]}")
         plt.show()
         
     if save:
-
-        if not plot:
-            # Get prediction image
-            pred = get_pred(prediction)
-
-        pred = pred.resize((og_image.size[0], og_image.size[1]))
+       
         # Save prediction and image
-        print("Mask size: ", pred.size)
-        print("Image size: ", og_image.size)
         split = path_to_image.split('/')[-1].split('.')
         pred.save(f"predictions/{split[0]}_pred_mask.{split[1]}")
         og_image.save(f"predictions/{split[0]}_pred.{split[1]}")
         print(f"Saved image {path_to_image.split('/')[-1]} and predicted mask")
 
-
-    return prediction
+    
+    return pred
     
         
 
 if __name__ == "__main__":
 
     # Find all images in folder
-    path = "/Users/daniel/Desktop/test"
+    path = "/Users/daniel/Desktop/erikStandard"
     files = [f for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
 
     # Load model
@@ -92,4 +92,4 @@ if __name__ == "__main__":
 
     # Predict on all images
     for file in files:
-        predict(model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=True, save=True)
+        pred = predict(model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=False, save=True)
