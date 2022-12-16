@@ -40,7 +40,7 @@ def intersection_over_union(mask1, mask2):
     # Return intersection over union
     return intersection.sum() / union.sum()
 
-def pixel_accuracy(pred, gt):
+def pixel_accuracy(gt, pred):
     """
     Calculates the pixel-level accuracy of a segmentation model.
     
@@ -98,7 +98,7 @@ def dice_coefficient(mask1,mask2):
     
     return dice
 
-def sensitivity(pred, gt):
+def sensitivity(gt, pred):
     """
     Calculates the sensitivity (true positive rate or recall) for a segmentation model.
     
@@ -130,7 +130,7 @@ def sensitivity(pred, gt):
     
     return sensitivity
 
-def specificity(pred, gt):
+def specificity(gt, pred):
     """
     Calculates the specificity for a segmentation model.
     
@@ -162,27 +162,27 @@ def specificity(pred, gt):
 
     return specificity
 
-def evaluate_image(pred, gt):
+def evaluate_image(gt, pred):
     """Evaluates a single image."""
     
     # Calculate the intersection-over-union (IoU)
-    iou = intersection_over_union(pred, gt)
+    iou = intersection_over_union(gt, pred)
     
     # Calculate the pixel accuracy
-    pixel_acc = pixel_accuracy(pred, gt)
+    pixel_acc = pixel_accuracy(gt, pred)
     
     # Calculate the dice coefficient
-    dice = dice_coefficient(pred, gt)
+    dice = dice_coefficient(gt, pred)
 
     # Calculate the sensitivity
-    sens = sensitivity(pred, gt)
+    sens = sensitivity(gt, pred)
 
     # Calculate the specificity
-    spec = specificity(pred, gt)
+    spec = specificity(gt, pred)
     
     return iou, pixel_acc, dice, sens, spec
 
-def average_evaluation(predictions, ground_truth):
+def average_evaluation(ground_truth, predictions):
     """Evaluates a list of images and gets the average IoU, pixel accuracy, and dice coefficient."""
     
     # Calculate the average IoU
@@ -208,50 +208,25 @@ def average_evaluation(predictions, ground_truth):
 
 if __name__ == "__main__":
 
-    # # Evaluate a single image
-    # image_path = "/Users/daniel/Desktop/Erik/03.png"
-    # image = load_img(image_path)
-
-    # # Load the ground-truth mask
-    # ground_truth = load_img("/Users/daniel/Desktop/Erik/03_mask.png", color_mode="grayscale")
-    # print(np.shape(np.array(ground_truth)))
-
-    # # Load model
-    # model = keras.models.load_model("model.h5")
-    
-    # # Load the predicted mask
-    # prediction = predict(model=model, path_to_image=image_path, image_size=1024, plot=False, save=False)
-
-    # # Binarize the mask
-    # prediction = prediction.point(lambda x: 1 if x > 30 else 0)
-
-
-    # iou, pixel_acc, dice, sens, spec = evaluate_image(prediction, ground_truth)
-    
-    # # Print the results
-    # print(f"Intersection over union: {iou}")
-    # print(f"Pixel accuracy: {pixel_acc}")
-    # print(f"Dice coefficient: {dice}")
-    # print(f"Sensitivity: {sens}")
-    # print(f"Specificity: {spec}")
-
-
-    ### Evaluate a list of images
-
+    # Set the paths to the ground truth and predictions
     path_to_ground_truth = "/Users/daniel/Desktop/testSet/"
     path_to_predictions = "/Users/daniel/Desktop/ReindeerLichens/predictions/"
 
+    # Create the predictions folder if it doesn't exist
     if not os.path.exists(path_to_predictions):
         os.mkdir(path_to_predictions)
         
 
 
-    # Load the ground-truth masks
+    # Create list of ground truth images and images to be predicted or loaded
     ground_truth_list = []
     to_prediction_list = []
+
     for folder in sorted(os.listdir(path_to_ground_truth)):
         if "DS_Store" not in folder:
             for image in sorted(os.listdir(os.path.join(path_to_ground_truth, folder))):
+
+                # If the image is a mask, binarize it and add it to the list
                 if "DS_Store" not in image and "mask" in image:
 
                     # Load the image
@@ -272,6 +247,8 @@ if __name__ == "__main__":
 
     # Initiliaze model to None and load it only once (if needed)
     model = None
+
+    # Loop through the images to be predicted or loaded
     for image_path in to_prediction_list:
 
         # Split the image name
@@ -295,6 +272,8 @@ if __name__ == "__main__":
 
         else:
             print(f"Predicting on image {image_name}...")
+
+            # Load the model if it hasn't been loaded yet
             if model == None:
                 model = keras.models.load_model("model.h5")
 
@@ -308,7 +287,7 @@ if __name__ == "__main__":
             predictions_list.append(prediction)
 
 
-    # Evaluate a list of images
+    # Evaluate the masks
     avg_iou, avg_acc, avg_dice, avg_sens, avg_spec = average_evaluation(ground_truth_list, predictions_list)
 
     # Print the results
