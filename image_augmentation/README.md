@@ -1,0 +1,3 @@
+# Image augmentation
+
+This directory contains all the code used for augmenting images and masks which can be found in [augment.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/image_augmentation/augment.py). As of right now, the images are only augmented by rotating them. Other possible augmenting techniques that is not currently implemented are for example color space transformations and image transformations.

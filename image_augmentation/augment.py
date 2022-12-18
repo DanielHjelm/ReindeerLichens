@@ -2,8 +2,6 @@ import imageio
 import imgaug
 import matplotlib.pyplot as plt
 import os
-import time
-import cv2
 
 class ImageAugmenter:
     """
@@ -89,7 +87,6 @@ def contrast_image(image, mask, type_of_contrast):
     return image_contrast, mask
 
 def augment_images(path_to_folder):
-
     """Augment images and masks in path_to_folder. A ImageAugmenter object is created for each image and mask."""
     for folder in os.listdir(path_to_folder):
         if "DS_Store" not in folder:
@@ -120,9 +117,6 @@ def augment_images(path_to_folder):
                 plt.imsave(path_to_folder + "/" + folder + "/" + image_name + '_augmented' + f'_{i+1}' + "." + image_path.split('.')[-1], image)
                 plt.imsave(path_to_folder + "/" + folder + "/" + mask_name + '_augmented' + f'_{i+1}' + "." + mask_path.split('.')[-1], mask)
                 print(f'Augmented image and mask saved to: {path_to_folder + "/" + folder}')
-
-
-
 
 if __name__ == '__main__':
 
