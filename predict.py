@@ -3,11 +3,12 @@ from tensorflow import keras
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import ImageOps
-import cv2
 from PIL import Image
 from os import listdir
 from os.path import isfile, join
 from downloadFromDB import createFolders
+import tensorflow as tf
+import sys
 
 def get_pred(prediction):
     '''Turn prediction into image'''
@@ -72,17 +73,41 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
 
     
     return pred
-    
+
+class IOU(tf.keras.metrics.MeanIoU):
+    def __init__(self, from_logits=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._from_logits = from_logits
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        if self._from_logits:
+            y_pred = tf.nn.softmax(y_pred)
+            y_pred = tf.math.argmax(y_pred, axis=-1)
+            super(IOU, self).update_state(
+                y_true, y_pred, sample_weight=sample_weight)
+        else:
+            super(IOU, self).update_state(
+                y_true, y_pred, sample_weight=sample_weight)
         
 
 if __name__ == "__main__":
 
+    if len(sys.argv) < 2:
+        print("USAGE: python3 predict.py <path_to_images>")
+        sys.exit(1)
+
+    # Path to images
+    path = sys.argv[1]
+
+    if (not path):
+        print("No path provided.")
+        sys.exit(1)
+
     # Find all images in folder
-    path = "/Users/daniel/Desktop/erikStandard"
     files = [f for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
 
     # Load model
-    model = keras.models.load_model("model.h5")
+    model = keras.models.load_model("modelV4.h5", custom_objects={"IOU": IOU})
 
     # Set figure size
     plt.rcParams["figure.figsize"] = (20, 20)
@@ -92,4 +117,4 @@ if __name__ == "__main__":
 
     # Predict on all images
     for file in files:
-        pred = predict(model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=False, save=True)
+        pred = predict(model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=True, save=False)
