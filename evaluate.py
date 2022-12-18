@@ -7,8 +7,23 @@ from keras import backend as K
 from PIL import Image
 import os
 from predict import predict
-import re
+import sys
 
+
+class IOU(tf.keras.metrics.MeanIoU):
+    def __init__(self, from_logits=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._from_logits = from_logits
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        if self._from_logits:
+            y_pred = tf.nn.softmax(y_pred)
+            y_pred = tf.math.argmax(y_pred, axis=-1)
+            super(IOU, self).update_state(
+                y_true, y_pred, sample_weight=sample_weight)
+        else:
+            super(IOU, self).update_state(
+                y_true, y_pred, sample_weight=sample_weight)
 
 def intersection_over_union(mask1, mask2):
     """
@@ -208,9 +223,21 @@ def average_evaluation(ground_truth, predictions):
 
 if __name__ == "__main__":
 
+    if len(sys.argv) < 3:
+        print("USAGE: python3 evaluate.py <path_to_ground_truth> <path_to_predictions>")
+        sys.exit(1)
+
     # Set the paths to the ground truth and predictions
-    path_to_ground_truth = "/Users/daniel/Desktop/testSet/"
-    path_to_predictions = "/Users/daniel/Desktop/ReindeerLichens/predictions/"
+    path_to_ground_truth = sys.argv[1]
+    path_to_predictions = sys.argv[2]
+
+    if (not path_to_ground_truth) or (not path_to_predictions):
+        print("No path to ground truth or predictions provided.")
+        sys.exit(1)
+
+    # # Set the paths to the ground truth and predictions
+    # path_to_ground_truth = "/Users/daniel/Desktop/testSet/"
+    # path_to_predictions = "/Users/daniel/Desktop/ReindeerLichens/predictions/"
 
     # Create the predictions folder if it doesn't exist
     if not os.path.exists(path_to_predictions):
@@ -275,7 +302,7 @@ if __name__ == "__main__":
 
             # Load the model if it hasn't been loaded yet
             if model == None:
-                model = keras.models.load_model("model.h5")
+                model = keras.models.load_model("modelV4.h5", custom_objects={"IOU": IOU})
 
             # Load the predicted mask
             prediction = predict(model=model, path_to_image=image_path, image_size=1024, plot=False, save=True)
