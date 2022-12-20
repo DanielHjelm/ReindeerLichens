@@ -2,6 +2,7 @@ import imageio
 import imgaug
 import matplotlib.pyplot as plt
 import os
+import sys
 
 class ImageAugmenter:
     """
@@ -120,9 +121,20 @@ def augment_images(path_to_folder):
 
 if __name__ == '__main__':
 
-    # Path to folder with images and masks
-    path_to_folder = '/Users/daniel/Desktop/ReindeerLichens/downloaded_images'
+    if len(sys.argv) < 2:
+        print("USAGE: python3 augment.py <path_to_images>")
+        sys.exit(1)
+
+    # Path to images
+    path = sys.argv[1]
+
+    if (not path):
+        print("No path provided.")
+        sys.exit(1)
+
+    # # Path to folder with images and masks
+    # path_to_folder = '/Users/daniel/Desktop/ReindeerLichens/downloaded_images'
 
     # Augment images and masks
-    augment_images(path_to_folder)
+    augment_images(path)
   
