@@ -5,6 +5,7 @@ sys.path.append("removeBlueFrame.py")
 sys.path.append("removeFoldingRule.py")
 from removeBlueFrame import removeBlueFrame
 from removeFoldingRule import removeFoldingRule
+import matplotlib.pyplot as plt
 
 
 def removeFrame(image_path):
@@ -203,3 +204,20 @@ def removeFoldingRule(image_path):
         else:
             print('Frame could not be removed')
             return None
+
+if __name__ == "__main__":
+
+    if len(sys.argv) < 2:
+        print("USAGE: python3 removeFrame.py <path_to_image>")
+        sys.exit(1)
+
+    # Path to directory
+    path_to_image = sys.argv[1]
+
+    if (not path_to_image):
+        print("No path specified")
+        sys.exit(1)
+
+    image = removeFrame(path_to_image)
+    plt.imshow(image)
+    plt.show()
