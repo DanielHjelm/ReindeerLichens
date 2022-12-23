@@ -1,8 +1,8 @@
 
 import cv2
 import numpy as np
-import os
 import matplotlib.pyplot as plt
+import sys
 
 
 def removeFrameUsingHoughLines(image_path, dilation_kernel = 20):
@@ -110,3 +110,19 @@ def removeFoldingRule(image_path):
             print('Frame could not be removed')
             return None
 
+if __name__ == "__main__":
+
+    if len(sys.argv) < 2:
+        print("USAGE: python3 removeFoldingRule.py <path_to_image>")
+        sys.exit(1)
+
+    # Path to directory
+    path_to_image = sys.argv[1]
+
+    if (not path_to_image):
+        print("No path specified")
+        sys.exit(1)
+
+    image = removeFoldingRule(path_to_image)
+    plt.imshow(image)
+    plt.show()
