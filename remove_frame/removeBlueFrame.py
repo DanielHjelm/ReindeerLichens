@@ -1,13 +1,13 @@
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+import sys
 
 def removeBlueFrame(image_path):
     '''Function that removes the frame in the image'''
 
     # Load image
     img = cv2.imread(image_path)
-
 
     # Create grayscale image
     gray = cv2.cvtColor(img,cv2.COLOR_BGR2GRAY)
@@ -57,7 +57,19 @@ def removeBlueFrame(image_path):
     return output
 
 if __name__ == "__main__":
-    image = removeBlueFrame('IMG_0155.jpg')
+
+    if len(sys.argv) < 2:
+        print("USAGE: python3 removeBlueFrame.py <path_to_image>")
+        sys.exit(1)
+
+    # Path to directory
+    path_to_image = sys.argv[1]
+
+    if (not path_to_image):
+        print("No path specified")
+        sys.exit(1)
+
+    image = removeBlueFrame(path_to_image)
     plt.imshow(image)
     plt.show()
 
