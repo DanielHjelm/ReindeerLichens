@@ -1,4 +1,5 @@
 # Import keras
+import keras.metrics as tfm
 from keras.models import load_model
 # Import other libraries
 from flask import Flask, request, jsonify, make_response  # Pip3 install flask
@@ -20,8 +21,22 @@ url = f"http://{host}/images"
 app = Flask(__name__)
 
 
+class IOU(tfm.MeanIoU):
+    def __init__(self, from_logits=False, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._from_logits = from_logits
+
+    def update_state(self, y_true, y_pred, sample_weight=None):
+        if self._from_logits:
+            super(IOU, self).update_state(y_true, tf.nn.softmax(
+                y_pred), sample_weight=sample_weight)
+        else:
+            super(IOU, self).update_state(
+                y_true, y_pred, sample_weight=sample_weight)
+
+
 # Load the model
-model = load_model('model.h5')
+model = load_model('modelV6.h5', custom_objects={'IOU': IOU})
 createFolders(["predictions"])
 
 
