@@ -355,7 +355,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
                 },
 
                 validateStatus: (status) => status < 500,
-                timeout: 20000,
+                timeout: 30000,
               });
             } catch (error) {
               setPredictionState("error");
