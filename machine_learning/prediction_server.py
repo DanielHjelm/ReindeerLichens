@@ -1,4 +1,6 @@
 # Import keras
+import predict as predict
+from download_from_db import createFolders
 import keras.metrics as tfm
 from keras.models import load_model
 # Import other libraries
@@ -11,8 +13,8 @@ import numpy as np
 import io
 import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
-from downloadFromDB import createFolders
-import predict as predict
+import sys
+sys.path.append('../')
 dotenv.load_dotenv("web_server/.env.local")
 host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 url = f"http://{host}/images"

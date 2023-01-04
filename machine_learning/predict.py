@@ -1,3 +1,7 @@
+import tensorflow as tf
+import sys
+sys.path.append('../')
+from download_from_db import createFolders
 from keras_preprocessing.image import load_img
 from tensorflow import keras
 import numpy as np
@@ -6,9 +10,7 @@ from PIL import ImageOps
 from PIL import Image
 from os import listdir
 from os.path import isfile, join
-from downloadFromDB import createFolders
-import tensorflow as tf
-import sys
+
 
 def get_pred(prediction):
     '''Turn prediction into image'''
@@ -20,7 +22,6 @@ def get_pred(prediction):
 
 def predict(model, path_to_image, image_size, plot=False, save=False):
     '''Function for predicting on a single image'''
-
 
     # Load image
     og_image = load_img(path_to_image)
@@ -46,33 +47,34 @@ def predict(model, path_to_image, image_size, plot=False, save=False):
 
     # Convert to binary
     pred = pred.point(lambda x: 255 if x > 30 else 0)
-        
+
     if plot:
 
-        
         # Find indices of non-zero pixels
         pred_array = np.array(pred)
         idx = np.nonzero(pred_array)
 
         # Create overlay image
-        overlayColor = Image.new(mode="RGB", size=(og_image.size[0], og_image.size[1]), color=(144,0,211))
+        overlayColor = Image.new(mode="RGB", size=(
+            og_image.size[0], og_image.size[1]), color=(144, 0, 211))
         overlay = np.array(og_image).copy()
-        overlay[idx] = 0.6*np.array(og_image)[idx] + 0.4*np.array(overlayColor)[idx]
+        overlay[idx] = 0.6*np.array(og_image)[idx] + \
+            0.4*np.array(overlayColor)[idx]
 
         plt.imshow(overlay)
         plt.title(f"Prediction on image {path_to_image.split('/')[-1]}")
         plt.show()
-        
+
     if save:
-       
+
         # Save prediction and image
         split = path_to_image.split('/')[-1].split('.')
         pred.save(f"predictions/{split[0]}_pred_mask.{split[1]}")
         og_image.save(f"predictions/{split[0]}_pred.{split[1]}")
         print(f"Saved image {path_to_image.split('/')[-1]} and predicted mask")
 
-    
     return pred
+
 
 class IOU(tf.keras.metrics.MeanIoU):
     def __init__(self, from_logits=False, *args, **kwargs):
@@ -88,7 +90,7 @@ class IOU(tf.keras.metrics.MeanIoU):
         else:
             super(IOU, self).update_state(
                 y_true, y_pred, sample_weight=sample_weight)
-        
+
 
 if __name__ == "__main__":
 
@@ -104,7 +106,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     # Find all images in folder
-    files = [f for f in listdir(path) if isfile(join(path, f)) and f != ".DS_Store"]
+    files = [f for f in listdir(path) if isfile(
+        join(path, f)) and f != ".DS_Store"]
 
     # Load model
     model = keras.models.load_model("modelV4.h5", custom_objects={"IOU": IOU})
@@ -117,4 +120,5 @@ if __name__ == "__main__":
 
     # Predict on all images
     for file in files:
-        pred = predict(model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=True, save=False)
+        pred = predict(
+            model=model, path_to_image=f"{path}/{file}", image_size=1024, plot=True, save=False)

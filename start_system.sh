@@ -1,13 +1,14 @@
 (
-    trap 'kill 0' SIGINT
+    trap 'kill 0' SIGINT;
 
-    cd images_api && npm run dev &
+    cd images_api && npm run dev &\
 
-    cd machine_learning && python3 prediction_server.py &
+    cd web_server && npm run dev & \
 
-    cd region_growing && go run main.go &
+    cd machine_learning && python3 prediction_server.py &\
 
-    cd web_server && npm run dev &
+    cd region_growing && go run main.go 
+
 
     wait
 )

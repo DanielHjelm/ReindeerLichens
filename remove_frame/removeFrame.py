@@ -1,11 +1,7 @@
+import matplotlib.pyplot as plt
 import cv2
 import numpy as np
 import sys
-sys.path.append("removeBlueFrame.py")
-sys.path.append("removeFoldingRule.py")
-from removeBlueFrame import removeBlueFrame
-from removeFoldingRule import removeFoldingRule
-import matplotlib.pyplot as plt
 
 
 def removeFrame(image_path):
@@ -204,6 +200,7 @@ def removeFoldingRule(image_path):
         else:
             print('Frame could not be removed')
             return None
+
 
 if __name__ == "__main__":
 
