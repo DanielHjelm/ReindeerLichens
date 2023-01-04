@@ -6,10 +6,10 @@ import sys
 
 def saveImagesWithoutFrame(path_to_images, path_to_save_folder):
     # Loop through all the images in the folder
-    for i, image in enumerate(os.listdir(os.getcwd()+'/'+path_to_images)):
+    for i, image in enumerate(os.listdir(path_to_images)):
 
         # Remove frame 
-        without_frame = removeFrame(os.getcwd()+'/'+path_to_images+'/'+image)
+        without_frame = removeFrame(path_to_images+'/'+image)
 
         # Make sure the frame is removed
         if without_frame is not None:

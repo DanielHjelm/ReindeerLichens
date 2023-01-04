@@ -8,6 +8,8 @@ from PIL import Image
 import os
 from predict import predict
 import sys
+import tensorflow_addons as tfa
+
 
 
 class IOU(tf.keras.metrics.MeanIoU):
@@ -25,16 +27,19 @@ class IOU(tf.keras.metrics.MeanIoU):
             super(IOU, self).update_state(
                 y_true, y_pred, sample_weight=sample_weight)
 
-def intersection_over_union(mask1, mask2):
+def intersection_over_union(gt, pred, num_classes=2):
     """
     Calculates the Intersection over Union (IoU) metric for a segmentation model.
         
     Parameters
     ----------
-    mask1: image
-        Either predicted or ground truth segmentation.
-    mask2: image
-        TEither predicted or ground truth segmentation.
+    gt: image
+        Ground truth segmentation.
+    pred: image
+        Predicted segmentation.
+
+    num_classes: int
+        Number of classes in the segmentation.
         
     Returns
     -------
@@ -43,17 +48,26 @@ def intersection_over_union(mask1, mask2):
     """
     
     # Make sure the masks are arrays
-    mask1 = np.array(mask1)
-    mask2= np.array(mask2)
-    
-    # Calculate intersection
-    intersection = np.logical_and(mask1, mask2)
-    
-    # Calculate union
-    union = np.logical_or(mask1, mask2)
-    
-    # Return intersection over union
-    return intersection.sum() / union.sum()
+    gt = np.array(gt)
+    pred= np.array(pred)
+
+    # Ensure that the masks are binary.
+    y_true = gt.astype(bool)
+    y_pred = pred.astype(bool)
+
+    # Compute the IoU for each class.
+    ious = []
+    for cls in range(num_classes):
+        mask1 = y_true == cls
+        mask2 = y_pred == cls
+        intersection = (mask1 & mask2).sum()
+        union = mask1.sum() + mask2.sum() - intersection
+        iou = intersection / union
+        ious.append(iou)
+
+    # Compute the mean IoU.
+    mean_iou = sum(ious) / 2
+    return mean_iou
 
 def pixel_accuracy(gt, pred):
     """
@@ -81,16 +95,16 @@ def pixel_accuracy(gt, pred):
     accuracy = correct / total
     return accuracy
 
-def dice_coefficient(mask1,mask2):
+def dice_coefficient(gt,pred):
     """
     Calculates the Dice coefficient for a segmentation model.
     
     Parameters
     ----------
-    mask1: image
-        Either predicted or ground truth segmentation.
-    mask2: image
-        TEither predicted or ground truth segmentation.
+    pred: image
+        The predicted segmentation.
+    gt: image
+        The ground truth segmentation.
         
     Returns
     -------
@@ -98,15 +112,12 @@ def dice_coefficient(mask1,mask2):
         The Dice coefficient of the model.
     """
     
-    # Make sure the masks are arrays
-    mask1 = np.array(mask1)
-    mask2= np.array(mask2)
     
     # Caluclate intersection
-    intersection = np.logical_and(mask1, mask2)
+    intersection = np.logical_and(gt, pred)
     
     # Calculate union
-    union = np.logical_or(mask1, mask2)
+    union = np.logical_or(gt, pred)
     
     # Calculate dice coefficent
     dice = (2*np.sum(intersection))/(np.sum(union)+np.sum(intersection))
@@ -219,12 +230,11 @@ def average_evaluation(ground_truth, predictions):
 
 
 
-
-
 if __name__ == "__main__":
 
     if len(sys.argv) < 3:
         print("USAGE: python3 evaluate.py <path_to_ground_truth> <path_to_predictions>")
+
         sys.exit(1)
 
     # Set the paths to the ground truth and predictions
@@ -234,11 +244,7 @@ if __name__ == "__main__":
     if (not path_to_ground_truth) or (not path_to_predictions):
         print("No path to ground truth or predictions provided.")
         sys.exit(1)
-
-    # # Set the paths to the ground truth and predictions
-    # path_to_ground_truth = "/Users/daniel/Desktop/testSet/"
-    # path_to_predictions = "/Users/daniel/Desktop/ReindeerLichens/predictions/"
-
+        
     # Create the predictions folder if it doesn't exist
     if not os.path.exists(path_to_predictions):
         os.mkdir(path_to_predictions)
