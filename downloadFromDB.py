@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 import sys
 
 # Load env variables
-load_dotenv("grow_cut_golang/web_server/.env.local")
+load_dotenv("web_server/.env.local")
 
 # Host for the API
 host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
@@ -149,5 +149,3 @@ if __name__ == "__main__":
 
     # Download images from database
     downloadFromDB(request_url, outputFolder, onlyLast24Hour=False)
-
-    

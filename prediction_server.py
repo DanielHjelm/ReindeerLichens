@@ -12,7 +12,7 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 from downloadFromDB import createFolders
 import predict as predict
-dotenv.load_dotenv("grow_cut_golang/web_server/.env.local")
+dotenv.load_dotenv("web_server/.env.local")
 host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 url = f"http://{host}/images"
 
