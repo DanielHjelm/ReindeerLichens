@@ -66,7 +66,6 @@ if __name__ == "__main__":
         print("Path does not exist")
         sys.exit(1)
 
-    path = "images1"
 
     host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 
