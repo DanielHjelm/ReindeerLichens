@@ -60,7 +60,7 @@ func main() {
 
 	var pipeline []Job
 
-	err := godotenv.Load("web_server/.env.local")
+	err := godotenv.Load("../web_server/.env.local")
 	if err != nil {
 		log.Fatalf("Some error occured. Err: %s", err)
 	}
