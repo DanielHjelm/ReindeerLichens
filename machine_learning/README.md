@@ -1,6 +1,6 @@
-# Removal of frame
+# Machine learning
 
-This directory contains all the code used for the machine learning part of the project
+This directory contains all the code used for the machine learning part of the project.
 
 - [ML_Lichens.ipynb](https://github.com/DanielHjelm/ReindeerLichens/blob/main/machine_learning/ML_Lichens.ipynb) contains the code for training and saving the machine learning model.
 - [predict.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/machine_learning/predict.py) uses the saved model to predict on new new images
