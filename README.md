@@ -1,4 +1,4 @@
-# ReindeerLichens
+# Determine reindeer lichen coverage with image segmentation and machine learning
 
 Project repository for project "Determine reindeer lichen coverage with image segmentation and machine learning" which have been conducted in the course in Scientific Computing (1TD316).
 
@@ -19,3 +19,7 @@ To start the data labeling system, do one of the following:
 
     cd region_growing && go run main.go 
     ```
+
+## Upload and download images to/from database
+
+Upload and downloading images from the database [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py)
