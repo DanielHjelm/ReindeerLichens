@@ -20,9 +20,12 @@ To start the data labeling system, do one of the following:
     cd machine_learning && python3 prediction_server.py 
 
     cd region_growing && go run main.go 
-    ```
 
-## Upload and download images to/from database
+    ```
+## Database
+
+Install and start a MongoDB instance (See: https://www.mongodb.com/docs/manual/installation/)
+### Upload and download images to/from database
 
 Code for uploading and downloading images from the database is in the files [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py).
 
