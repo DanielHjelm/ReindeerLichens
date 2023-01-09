@@ -24,7 +24,14 @@ To start the data labeling system, do one of the following:
     ```
 ## Database
 
-Install and start a MongoDB instance (See: https://www.mongodb.com/docs/manual/installation/)
+Install and start a MongoDB instance (See: https://www.mongodb.com/docs/manual/installation/).
+
+Use one of the following option for the database:
+
+- [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/lp/try4?utm_content=rlsavisitor&utm_source=google&utm_campaign=search_gs_pl_evergreen_atlas_core_retarget-brand_gic-null_emea-all_ps-all_desktop_eng_lead&utm_term=mongodb&utm_medium=cpc_paid_search&utm_ad=e&utm_ad_campaign_id=14412646455&adgroup=131761126492&gclid=CjwKCAiAk--dBhABEiwAchIwkdINWlBFj1y93_XUqRF2twYta-RzBNqCtuGaN3Y9FtR8O7N-y5vgWxoCK40QAvD_BwE)
+
+- Run database locally and use a port-forwarding solution (See for example [ngrok](https://ngrok.com/docs/getting-started))
+
 ### Upload and download images to/from database
 
 Code for uploading and downloading images from the database is in the files [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py).
