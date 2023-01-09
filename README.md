@@ -2,6 +2,8 @@
 
 Project repository for project "Determine reindeer lichen coverage with image segmentation and machine learning" which have been conducted in the course in Scientific Computing (1TD316).
 
+Every folder contains its own README where more details about that specific part of the project is clearly stated.
+
 ## Image labeling
 To start the data labeling system, do one of the following:
 
