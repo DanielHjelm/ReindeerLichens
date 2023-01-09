@@ -11,11 +11,11 @@ To start the data labeling system, do one of the following:
     ```
 2. Start each component of the system individually:
     ```bash
-    cd images_api && npm run dev &\
+    cd images_api && npm run dev 
 
-    cd web_server && npm run dev & \
+    cd web_server && npm run dev
 
-    cd machine_learning && python3 prediction_server.py &\
+    cd machine_learning && python3 prediction_server.py 
 
     cd region_growing && go run main.go 
     ```
