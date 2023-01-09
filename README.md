@@ -22,5 +22,5 @@ To start the data labeling system, do one of the following:
 
 ## Upload and download images to/from database
 
-Code for uploading and downloading images from the database is the files [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py).
+Code for uploading and downloading images from the database is in the files [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py).
 
