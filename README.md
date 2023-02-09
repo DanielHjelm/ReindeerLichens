@@ -5,23 +5,26 @@ Project repository for project "Determine reindeer lichen coverage with image se
 Every folder contains its own README where more details about that specific part of the project is clearly stated.
 
 ## Image labeling
+
 To start the data labeling system, do one of the following:
 
 1. Start the entire system with [start_system.sh](https://github.com/DanielHjelm/ReindeerLichens/blob/main/start_system.sh):
-    ```bash
-    $ ./start_system.sh
-    ```
+   ```bash
+   $ ./start_system.sh
+   ```
 2. Start each component of the system individually:
-    ```bash
-    cd images_api && npm ci && npm run dev &\
 
-    cd web_server && npm ci && npm run dev & \
+   ```bash
+   cd images_api && npm ci && npm run dev & \
 
-    cd machine_learning && python3 prediction_server.py 
+   cd web_server && npm ci && npm run dev & \
 
-    cd region_growing && go run main.go 
+   cd machine_learning && python3 prediction_server.py & \
 
-    ```
+   cd region_growing && go run main.go
+
+   ```
+
 ## Database
 
 Install and start a MongoDB instance (See: https://www.mongodb.com/docs/manual/installation/).
@@ -35,4 +38,3 @@ Use one of the following option for the database:
 ### Upload and download images to/from database
 
 Code for uploading and downloading images from the database is in the files [upload_to_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/upload_to_db.py) and [download_from_db.py](https://github.com/DanielHjelm/ReindeerLichens/blob/main/download_from_db.py).
-

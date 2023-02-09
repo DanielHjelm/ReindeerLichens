@@ -41,7 +41,7 @@ func handleCellularGrowth(pipeline *[]Job) {
 			}
 
 			// utils.SendInProgessStatus(job.FileName, true)
-			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, true, job.AllowJumps, job.NeighborThreshold)
+			mask := cellulargrowth.CellularGrowth(job.ImageData, job.InitialState, false, job.AllowJumps, job.NeighborThreshold)
 			fmt.Printf("Cellular growth completed\n")
 			fileType := strings.Split(job.FileName, ".")[1]
 			maskName := strings.Split(job.FileName, ".")[0] + "_mask" + "." + fileType
@@ -113,7 +113,7 @@ func main() {
 		fmt.Printf("threshold: %v\n", r_body.NeighborThreshold)
 
 		if r_body.NeighborThreshold == "" || r_body.NeighborThreshold == "No data" {
-			r_body.NeighborThreshold = "0.99" // Default threshold
+			r_body.NeighborThreshold = "0.9999" // Default threshold
 		}
 		var threshold float64
 		if n, err := strconv.ParseFloat(r_body.NeighborThreshold, 64); err == nil {

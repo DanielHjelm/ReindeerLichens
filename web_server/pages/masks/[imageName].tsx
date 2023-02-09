@@ -13,6 +13,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
   let [showMask, setShowMask] = React.useState(true);
   let [starred, setStarred] = React.useState(false);
   let [allowJump, setAllowJump] = React.useState(false);
+  let [coverage, setCoverage] = React.useState(0);
   let toggleAdd = false;
   const ctxRef = React.useRef<CanvasRenderingContext2D>();
 
@@ -21,7 +22,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
 
   function removeBackground(imageData: ImageData): ImageData {
     let data = imageData.data;
-
+    let coverage = 0;
     for (let i = 0; i < data.length; i += 4) {
       let r = data[i];
       let g = data[i + 1];
@@ -34,13 +35,16 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         data[i] = 151;
         data[i + 1] = 31;
         data[i + 2] = 230;
+        coverage++;
       }
     }
+    setCoverage(Math.round((coverage / (data.length / 4)) * 100));
     return imageData;
   }
 
   function blackoutBackground(imageData: ImageData): ImageData {
     let data = imageData.data;
+
     for (let i = 0; i < data.length; i += 4) {
       let a = data[i + 3];
       if (a === 0) {
@@ -200,7 +204,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         setMaskSize({ width: msk.width, height: msk.height });
       };
     }
-    axios.post("/api/hello");
 
     return () => {
       window.removeEventListener("beforeunload", NotifyUserClickedBack);
@@ -244,6 +247,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
     allowJumpSwitch.hidden = false;
     if (addBtn.innerText === "Send") {
       if (updateRequestStatus !== "idle") {
+        console.log("Returning");
         return;
       }
       let updatedMask = canvasToBase64();
@@ -413,20 +417,6 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         break;
     }
   }
-  function calcCoverage() {
-    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
-    let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
-    let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
-    let data = imageData.data;
-    let count = 0;
-    for (let i = 0; i < data.length; i += 4) {
-      let a = data[i + 3];
-      if (a !== 0) {
-        count++;
-      }
-    }
-    return Math.round((count / (imageSize.width * imageSize.height)) * 100);
-  }
 
   function downloadIMask() {
     let img = new Image();
@@ -513,7 +503,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
             {maskInformationRequstStatus === "idle" ? getStarredIcon(starred) : getRequestStatusSymbol(maskInformationRequstStatus)}
           </div>
         </div>
-        <h4>{`Coverage: ${calcCoverage()}%`}</h4>
+        <h4>{`Coverage: ${coverage}%`}</h4>
         <div>
           <label className="inline-flex relative items-center cursor-pointer">
             <input type="checkbox" value="" className="sr-only peer" checked={!showMask} onChange={(e) => setShowMask(!e.target.checked)} />

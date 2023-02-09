@@ -27,7 +27,6 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 			ch <- string(b)
 		}
 	}(ch)
-	threshold = .99
 
 	numProcs := runtime.NumCPU()
 	saveEveryNIterations := 10
