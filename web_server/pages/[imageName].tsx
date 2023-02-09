@@ -30,6 +30,21 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
     return file;
   }
 
+  function calcCoverage() {
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
+    let data = imageData.data;
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      let a = data[i + 3];
+      if (a !== 0) {
+        count++;
+      }
+    }
+    return Math.round((count / (imageSize.width * imageSize.height)) * 100);
+  }
+
   async function saveChanges(): Promise<boolean | undefined> {
     if (savePredictionRequestStatus === "pending") {
       return;
@@ -430,6 +445,9 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
                 <span className="ml-3 text-sm font-medium text-gray-900 dark:text-gray-300">Show mask</span>
               </label>
             </div>
+            <div>
+              <h4>{`Coverage: ${calcCoverage()}%`}</h4>
+            </div>
             <div
               className="flex px-4 py-2 cursor-pointer shadow rounded bg-green-400"
               onClick={() => {
@@ -452,6 +470,7 @@ export default function imageName({ imageName, imageFile }: { imageName: string;
 export async function getStaticProps(context: any) {
   const imageName = context.params.imageName;
   console.log(imageName);
+
   let imageAndMask = await getImageAndMask(imageName);
 
   if (imageAndMask.notFound) {

@@ -1,15 +1,15 @@
+from os.path import isfile, join
+from os import listdir
+import os
+from PIL import Image
+from PIL import ImageOps
+import matplotlib.pyplot as plt
+import numpy as np
+from tensorflow import keras
+from keras_preprocessing.image import load_img
 import tensorflow as tf
 import sys
 sys.path.append('../')
-from download_from_db import createFolders
-from keras_preprocessing.image import load_img
-from tensorflow import keras
-import numpy as np
-import matplotlib.pyplot as plt
-from PIL import ImageOps
-from PIL import Image
-from os import listdir
-from os.path import isfile, join
 
 
 def get_pred(prediction):
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     plt.rcParams["figure.figsize"] = (20, 20)
 
     # Create folders
-    createFolders(["predictions"])
+    os.makedirs("predictions", exist_ok=True)
 
     # Predict on all images
     for file in files:

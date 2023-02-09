@@ -1,6 +1,5 @@
 # Import keras
 import predict as predict
-from download_from_db import createFolders
 import keras.metrics as tfm
 from keras.models import load_model
 # Import other libraries
@@ -15,9 +14,11 @@ import matplotlib.image as mpimg
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('../')
+sys.path.append('../web_server')
 dotenv.load_dotenv("web_server/.env.local")
 host = os.getenv("NEXT_PUBLIC_IMAGES_API_HOST")
 url = f"http://{host}/images"
+url = "http://localhost:8000/images"
 
 # Initialize the Flask application
 app = Flask(__name__)
@@ -39,7 +40,7 @@ class IOU(tfm.MeanIoU):
 
 # Load the model
 model = load_model('modelV6.h5', custom_objects={'IOU': IOU})
-createFolders(["predictions"])
+os.makedirs("predictions", exist_ok=True)
 
 
 def _build_cors_preflight_response():

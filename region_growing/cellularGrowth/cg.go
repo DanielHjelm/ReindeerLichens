@@ -27,9 +27,10 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 			ch <- string(b)
 		}
 	}(ch)
+	threshold = .99
 
 	numProcs := runtime.NumCPU()
-	saveEveryNIterations := 40
+	saveEveryNIterations := 10
 	labels := utils.CreateArrayInt(len(img), len(img[0]))
 
 	fmt.Printf("Starting cellular growth on image with size %dx%d\n", len(img), len(img[0]))
@@ -46,7 +47,8 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 			}
 		}
 	}
-	utils.SaveMask(labels, "initial_mask.jpg")
+	// utils.SaveMask(labels, "result/initial_mask.jpg")
+	SaveState(img, labels, "result/initial_mask.jpg")
 
 	labels_next := utils.CopyArrayInt(labels)
 
@@ -87,10 +89,8 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 		if shouldSaveState && (iteration%saveEveryNIterations) == 0 {
 			fmt.Printf("Saving Image\n")
 			go func() {
-				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
+				SaveState(img, labels_next, fmt.Sprintf("result/cellular_growth_%d.jpg", imageCount))
 				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask%d.jpg", imageCount))
-				// SaveState(img, labels_next, initial_values, fmt.Sprintf("result/cellular_growth.jpg"))
-				// utils.SaveMask(labels_next, fmt.Sprintf("result/grow_cut_mask.jpg"))
 				imageCount++
 
 			}()
@@ -100,14 +100,14 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 		wg.Wait()
 
 		fmt.Printf("Assigned %d pixels on iteration %d\n", assigned, iteration)
-		if assigned > 30 {
+		if assigned > 0 {
 			done = false
 
 		} else {
 
 			if allowJumps {
 				if distantNeighbors := FillInDistantNeighbors(img, labels_next); distantNeighbors > 0 {
-					if distantNeighbors > 20 {
+					if distantNeighbors > 0 {
 
 						fmt.Printf("Restarting growth, %d distant neighbors found\n", distantNeighbors)
 						done = false
@@ -117,10 +117,10 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 					fmt.Printf("Stopped on iteration %d\n", iteration)
 				}
 			} else {
-				if assigned < 40 {
+				if assigned < 2 {
 					fmt.Printf("Stopping on iteration %d due to only assigning %d pixels", iteration, assigned)
 					labels = utils.CopyArrayInt(labels_next)
-					break
+					done = true
 
 				} else {
 					done = false
@@ -146,22 +146,15 @@ func CellularGrowth(img [][][]uint8, initial_values [][][]uint8, shouldSaveState
 	elapsed := time.Since(start)
 	fmt.Printf("Cellular growth took %s to run %d iterations\n", elapsed, iteration)
 	fmt.Printf("Average time per iteration: %s\n", elapsed/time.Duration(iteration))
-
+	SaveState(img, labels_next, "result/final.jpg")
 	utils.SaveMask(labels_next, "result.jpg")
 
 	return labels_next
 
 }
 
-func SaveState(img [][][]uint8, labels [][]int, initial_values []map[string]int, filename string) {
+func SaveState(img [][][]uint8, labels [][]int, filename string) {
 	mask := utils.CopyArrayInt(labels)
-
-	for i := 0; i < len(initial_values); i++ {
-		x := initial_values[i]["qx"]
-		y := initial_values[i]["y"]
-		mask[y][x] = -1
-
-	}
 
 	// err := saveImage("grow_cut.jpg", arrayToImage(_saveImg))
 	err := utils.SaveMaskOnTopOfImage(img, mask, filename)
@@ -250,7 +243,7 @@ func FillInDistantNeighbors(img [][][]uint8, labels [][]int) int {
 	fmt.Printf("Running FillInDistantNeighbor\n")
 	// globalMeanNorm := utils.ImageMeanNorm(img)
 	threshold := 0.999999
-	reach := 100
+	reach := 5
 	found := 0
 
 	wg := new(sync.WaitGroup)

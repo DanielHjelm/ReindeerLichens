@@ -413,7 +413,53 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
         break;
     }
   }
+  function calcCoverage() {
+    let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+    let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+    let imageData = ctx.getImageData(0, 0, imageSize.width, imageSize.height);
+    let data = imageData.data;
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      let a = data[i + 3];
+      if (a !== 0) {
+        count++;
+      }
+    }
+    return Math.round((count / (imageSize.width * imageSize.height)) * 100);
+  }
 
+  function downloadIMask() {
+    let img = new Image();
+    img.src = image;
+    let imgData_1: ImageData;
+    let canvas_1 = document.createElement("canvas") as HTMLCanvasElement;
+    img.onload = () => {
+      let ctx_1 = canvas_1.getContext("2d") as CanvasRenderingContext2D;
+      canvas_1.width = img.width;
+      canvas_1.height = img.height;
+      ctx_1.drawImage(img, 0, 0);
+
+      imgData_1 = ctx_1.getImageData(0, 0, canvas_1.width, canvas_1.height);
+      let canvas = document.getElementById("canvas") as HTMLCanvasElement;
+      let ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+
+      let imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+      for (let i = 0; i < imgData.data.length; i += 4) {
+        if (imgData.data[i + 3] !== 0) {
+          imgData_1!.data[i] = imgData_1!.data[i] * 0.6 + imgData.data[i] * 0.4;
+          imgData_1!.data[i + 1] = imgData_1!.data[i + 1] * 0.6 + imgData.data[i + 1] * 0.4;
+          imgData_1!.data[i + 2] = imgData_1!.data[i + 2] * 0.6 + imgData.data[i + 2] * 0.4;
+        }
+      }
+      ctx_1.putImageData(imgData_1!, 0, 0);
+      var link = document.createElement("a");
+      link.download = fileName;
+
+      link.href = canvas_1.toDataURL();
+      link.click();
+    };
+  }
   async function handleSaveStar() {
     console.log("Saving star");
     setMaskInformationRequestStatus("pending");
@@ -467,6 +513,7 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
             {maskInformationRequstStatus === "idle" ? getStarredIcon(starred) : getRequestStatusSymbol(maskInformationRequstStatus)}
           </div>
         </div>
+        <h4>{`Coverage: ${calcCoverage()}%`}</h4>
         <div>
           <label className="inline-flex relative items-center cursor-pointer">
             <input type="checkbox" value="" className="sr-only peer" checked={!showMask} onChange={(e) => setShowMask(!e.target.checked)} />
@@ -494,6 +541,9 @@ export default function Mask({ mask, image, fileName }: { mask: string; image: s
                   ctxRef.current!.lineWidth = parseInt(e.target.value);
                 }}
               />
+            </div>
+            <div className="bg-green-200 rounded px-4 py-1 mt-4 cursor-pointer items-center justify-center text-center" onClick={() => downloadIMask()}>
+              Download
             </div>
             <div id="saveButton" className="m-4 px-4 py-1 bg-green-400 rounded cursor-pointer items-center justify-center text-center" onClick={saveChanges}>
               {requestStatus === "idle" ? <p>Save (s)</p> : <div className="mx-auto">{getRequestStatusSymbol(requestStatus)}</div>}
